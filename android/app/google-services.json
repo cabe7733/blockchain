@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "499298703931",
+    "project_id": "blockchain-app-95ee5",
+    "storage_bucket": "blockchain-app-95ee5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:499298703931:android:4a25208ace6182200b1a1e",
+        "android_client_info": {
+          "package_name": "com.example.blockchain_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLqiQ28sjvn203JJMPjMVwADzHKTDGcfI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
