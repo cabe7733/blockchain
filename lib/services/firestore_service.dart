@@ -78,11 +78,19 @@ class FirestoreService {
 
       final companies = docs.map((e) => e.companyName).toSet();
       final industries = <String, int>{};
+      final registrationsByMonth = <String, int>{};
       int totalPdfs = 0;
 
       for (final exp in docs) {
+        // Conteo de industrias
         industries[exp.industry] = (industries[exp.industry] ?? 0) + 1;
+        
+        // Conteo de adjuntos
         totalPdfs += exp.attachments.length;
+
+        // Tendencia mensual (ej: "2024-03")
+        final monthKey = "${exp.registrationDate.year}-${exp.registrationDate.month.toString().padLeft(2, '0')}";
+        registrationsByMonth[monthKey] = (registrationsByMonth[monthKey] ?? 0) + 1;
       }
 
       String topIndustry = '';
@@ -91,14 +99,29 @@ class FirestoreService {
             industries.entries.reduce((a, b) => a.value > b.value ? a : b).key;
       }
 
+      // Ordenar histórico por fecha (las keys de los mapas no garantizan orden)
+      final sortedMonths = registrationsByMonth.keys.toList()..sort();
+      final monthlyData = {
+        for (var k in sortedMonths) k: registrationsByMonth[k]
+      };
+
       return {
         'total': docs.length,
         'companies': companies.length,
         'topIndustry': topIndustry,
         'totalPdfs': totalPdfs,
+        'industryDistribution': Map<String, int>.from(industries),
+        'monthlyTrend': Map<String, int>.from(monthlyData),
       };
     } catch (e) {
-      return {'total': 0, 'companies': 0, 'topIndustry': '-', 'totalPdfs': 0};
+      return {
+        'total': 0,
+        'companies': 0,
+        'topIndustry': '-',
+        'totalPdfs': 0,
+        'industryDistribution': <String, int>{},
+        'monthlyTrend': <String, int>{},
+      };
     }
   }
 

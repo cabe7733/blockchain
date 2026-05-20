@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -26,11 +27,8 @@ class BlockchainExperiencesApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Provider del tema oscuro/claro
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        // Provider de autenticación
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // Provider de experiencias con filtros y paginación
         ChangeNotifierProvider(create: (_) => ExperienceProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -38,10 +36,19 @@ class BlockchainExperiencesApp extends StatelessWidget {
           return MaterialApp(
             title: 'Blockchain en la Empresa',
             debugShowCheckedModeBanner: false,
+            locale: const Locale('es'),
+            supportedLocales: const [
+              Locale('es'),
+              Locale('en'),
+            ],
+            localizationsDelegates: [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             themeMode: themeProvider.themeMode,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            // AuthWrapper decide si mostrar Login o Home
             home: const AuthWrapper(),
           );
         },

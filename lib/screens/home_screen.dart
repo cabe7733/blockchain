@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../models/experience_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/experience_provider.dart';
@@ -10,6 +9,9 @@ import '../utils/pdf_generator.dart';
 import '../widgets/experience_card.dart';
 import '../widgets/loading_shimmer.dart';
 import '../widgets/stats_card.dart';
+import '../widgets/industry_bar_chart.dart';
+import '../widgets/experience_line_chart.dart';
+import '../widgets/executive_summary_card.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/gradient_button.dart';
 import 'add_experience_screen.dart';
@@ -21,20 +23,27 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _stats;
   bool _statsLoading = true;
   bool _exportingPdf = false;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadStats();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadStats() async {
-    final stats =
-        await context.read<ExperienceProvider>().getStats();
+    final stats = await context.read<ExperienceProvider>().getStats();
     if (mounted) setState(() { _stats = stats; _statsLoading = false; });
   }
 
@@ -45,14 +54,12 @@ class _HomeScreenState extends State<HomeScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       initialDateRange: provider.startDate != null && provider.endDate != null
-          ? DateTimeRange(
-              start: provider.startDate!, end: provider.endDate!)
+          ? DateTimeRange(start: provider.startDate!, end: provider.endDate!)
           : null,
       locale: const Locale('es'),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme:
-              const ColorScheme.light(primary: AppTheme.primaryBlue),
+          colorScheme: const ColorScheme.light(primary: AppTheme.primaryBlue),
         ),
         child: child!,
       ),
@@ -116,14 +123,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider  = context.watch<ThemeProvider>();
-    final authProvider   = context.watch<AuthProvider>();
-    final expProvider    = context.watch<ExperienceProvider>();
-    final user           = authProvider.userModel;
-    final screenWidth    = MediaQuery.of(context).size.width;
-    final isMobile       = screenWidth < 768;
-    final isTablet       = screenWidth >= 768 && screenWidth < 1100;
-    final isDark         = themeProvider.isDark;
+    final themeProvider = context.watch<ThemeProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final expProvider = context.watch<ExperienceProvider>();
+    final user = authProvider.userModel;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 768;
+    final isTablet = screenWidth >= 768 && screenWidth < 1100;
+    final isDark = themeProvider.isDark;
 
     return Scaffold(
       body: Container(
@@ -131,78 +138,39 @@ class _HomeScreenState extends State<HomeScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ── AppBar personalizado ──────────────────
               _buildAppBar(context, user, themeProvider, isDark, isMobile),
-              // ── Contenido scrollable ──────────────────
+              _buildTabBar(isMobile),
               Expanded(
-                child: StreamBuilder<List<ExperienceModel>>(
-                  stream: expProvider.experiencesStream,
-                  builder: (context, snapshot) {
-                    final allExp = snapshot.data ?? [];
-                    final filtered = expProvider.filteredExperiences(allExp);
-
-                    return CustomScrollView(
-                      slivers: [
-                        // Stats
-                        SliverToBoxAdapter(
-                          child: _buildStats(isMobile, isTablet),
-                        ),
-                        // Barra de filtros + botones
-                        SliverToBoxAdapter(
-                          child: _buildToolbar(
-                              context, filtered, isMobile, expProvider),
-                        ),
-                        // Grid / Lista
-                        SliverPadding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isMobile ? 16 : 32,
-                            vertical: 12,
-                          ),
-                          sliver: _buildContent(
-                              context, snapshot, filtered, isMobile),
-                        ),
-                        // Botón "Cargar más"
-                        if (expProvider.hasMore && filtered.isNotEmpty)
-                          SliverToBoxAdapter(
-                            child: _buildLoadMoreButton(
-                                context, allExp, expProvider),
-                          ),
-                        const SliverToBoxAdapter(
-                            child: SizedBox(height: 40)),
-                      ],
-                    );
-                  },
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildExperiencesTab(expProvider, isMobile, isTablet),
+                    _buildStatsTab(isMobile, isTablet),
+                  ],
                 ),
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: isMobile
+      floatingActionButton: isMobile && _tabController.index == 0
           ? FloatingActionButton.extended(
               onPressed: () => _navigateToAdd(context),
               backgroundColor: AppTheme.primaryBlue,
               icon: const Icon(Icons.add, color: AppTheme.white),
               label: const Text('Nueva',
-                  style: TextStyle(
-                      color: AppTheme.white, fontWeight: FontWeight.bold)),
+                  style: TextStyle(color: AppTheme.white, fontWeight: FontWeight.bold)),
             )
           : null,
     );
   }
 
-  Widget _buildAppBar(
-      BuildContext context,
-      userModel,
-      ThemeProvider themeProvider,
-      bool isDark,
-      bool isMobile) {
+  Widget _buildAppBar(BuildContext context, userModel, ThemeProvider themeProvider,
+      bool isDark, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 16 : 32, vertical: 14),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 14),
       child: Row(
         children: [
-          // Ícono + título
           const Icon(Icons.hub_outlined, color: AppTheme.white, size: 28),
           const SizedBox(width: 12),
           Expanded(
@@ -216,7 +184,6 @@ class _HomeScreenState extends State<HomeScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Toggle modo oscuro
           IconButton(
             onPressed: themeProvider.toggle,
             icon: Icon(
@@ -226,7 +193,6 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
           ),
           const SizedBox(width: 8),
-          // Avatar + info usuario
           if (userModel != null)
             GestureDetector(
               onTap: _showLogoutDialog,
@@ -256,14 +222,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 fontSize: 13)),
                         Text(userModel.company,
                             style: TextStyle(
-                                color: Colors.white.withValues(alpha:0.75),
+                                color: Colors.white.withValues(alpha: 0.75),
                                 fontSize: 11)),
                       ],
                     ),
                     IconButton(
                       onPressed: _showLogoutDialog,
-                      icon: const Icon(Icons.logout,
-                          color: AppTheme.white, size: 20),
+                      icon: const Icon(Icons.logout, color: AppTheme.white, size: 20),
                       tooltip: 'Cerrar sesión',
                     ),
                   ],
@@ -275,77 +240,140 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStats(bool isMobile, bool isTablet) {
+  Widget _buildTabBar(bool isMobile) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: AppTheme.white,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: AppTheme.primaryDark,
+        unselectedLabelColor: Colors.white70,
+        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        dividerColor: Colors.transparent,
+        tabs: [
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.library_books_outlined, 
+                  size: 18, color: _tabController.index == 0 
+                    ? AppTheme.primaryDark : Colors.white70),
+                const SizedBox(width: 8),
+                const Text('Experiencias'),
+              ],
+            ),
+          ),
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.analytics_outlined, 
+                  size: 18, color: _tabController.index == 1 
+                    ? AppTheme.primaryDark : Colors.white70),
+                const SizedBox(width: 8),
+                const Text('Estadísticas'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExperiencesTab(ExperienceProvider expProvider, bool isMobile, bool isTablet) {
+    return StreamBuilder<List<ExperienceModel>>(
+      stream: expProvider.experiencesStream,
+      builder: (context, snapshot) {
+        final allExp = snapshot.data ?? [];
+        final filtered = expProvider.filteredExperiences(allExp);
+
+        return CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: _buildToolbar(context, filtered, isMobile, expProvider),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 12),
+              sliver: _buildContent(context, snapshot, filtered, isMobile),
+            ),
+            if (expProvider.hasMore && filtered.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _buildLoadMoreButton(context, allExp, expProvider),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatsTab(bool isMobile, bool isTablet) {
     if (_statsLoading) {
-      return Container(
-        height: 90,
-        margin: EdgeInsets.symmetric(
-            horizontal: isMobile ? 16 : 32, vertical: 8),
-        child: const Center(child: CircularProgressIndicator(color: AppTheme.white)),
-      );
+      return const Center(child: CircularProgressIndicator(color: AppTheme.white));
     }
 
+    final industryData = _stats!['industryDistribution'] as Map<String, int>? ?? {};
+    final monthlyData = _stats!['monthlyTrend'] as Map<String, int>? ?? {};
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStatsCards(isMobile, isTablet),
+          const SizedBox(height: 20),
+          if (_stats != null) ExecutiveSummaryCard(stats: _stats!),
+          const SizedBox(height: 20),
+          if (industryData.isNotEmpty) IndustryBarChart(data: industryData),
+          const SizedBox(height: 16),
+          if (monthlyData.isNotEmpty) ExperienceLineChart(data: monthlyData),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCards(bool isMobile, bool isTablet) {
     final stats = _stats!;
     final cards = [
-      StatsCard(
-        title: 'Experiencias',
-        value: '${stats['total']}',
-        icon: Icons.library_books_outlined,
-        color: AppTheme.primaryBlue,
-      ),
-      StatsCard(
-        title: 'Empresas distintas',
-        value: '${stats['companies']}',
-        icon: Icons.business_outlined,
-        color: AppTheme.primaryViolet,
-      ),
-      StatsCard(
-        title: 'Industria principal',
-        value: stats['topIndustry'].isEmpty ? '-' : stats['topIndustry'],
-        icon: Icons.category_outlined,
-        color: const Color(0xFF0D9488),
-      ),
-      StatsCard(
-        title: 'PDFs adjuntos',
-        value: '${stats['totalPdfs']}',
-        icon: Icons.attach_file,
-        color: const Color(0xFFF59E0B),
-      ),
+      StatsCard(title: 'Total', value: '${stats['total']}', 
+        icon: Icons.library_books, color: AppTheme.primaryBlue),
+      StatsCard(title: 'Empresas', value: '${stats['companies']}', 
+        icon: Icons.business, color: AppTheme.primaryViolet),
+      StatsCard(title: 'Sector Líder', value: stats['topIndustry'].isEmpty ? '-' : stats['topIndustry'], 
+        icon: Icons.category, color: const Color(0xFF0D9488)),
+      StatsCard(title: 'PDFs', value: '${stats['totalPdfs']}', 
+        icon: Icons.attach_file, color: const Color(0xFFF59E0B)),
     ];
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 16 : 32, vertical: 8),
-      child: isMobile
-          ? GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.8,
-              children: cards,
-            )
-          : GridView.count(
-              crossAxisCount: isTablet ? 2 : 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
-              childAspectRatio: isTablet ? 2.5 : 2.8,
-              children: cards,
-            ),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: cards.map((card) {
+        return SizedBox(
+          width: isMobile 
+              ? (MediaQuery.of(context).size.width - 80) / 2
+              : 150,
+          child: card,
+        );
+      }).toList(),
     );
   }
 
   Widget _buildToolbar(BuildContext context, List<ExperienceModel> filtered,
       bool isMobile, ExperienceProvider expProvider) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 16 : 32, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 10),
       child: Column(
         children: [
-          // Barra de búsqueda/filtros
           SearchFilterBar(
             searchValue: expProvider.searchQuery,
             industryValue: expProvider.industryFilter,
@@ -368,25 +396,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
-                  onPressed: _exportingPdf
-                      ? null
-                      : () => _exportPdf(filtered),
+                  onPressed: _exportingPdf ? null : () => _exportPdf(filtered),
                   icon: _exportingPdf
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.primaryBlue))
+                      ? const SizedBox(width: 14, height: 14, 
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue))
                       : const Icon(Icons.picture_as_pdf_outlined, size: 16),
                   label: const Text('📄 Exportar Reporte'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.white,
                     side: const BorderSide(color: AppTheme.white),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     textStyle: const TextStyle(fontSize: 13),
                   ),
                 ),
@@ -397,20 +417,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildContent(
-      BuildContext context,
-      AsyncSnapshot<List<ExperienceModel>> snapshot,
-      List<ExperienceModel> filtered,
-      bool isMobile) {
+  Widget _buildContent(BuildContext context, AsyncSnapshot<List<ExperienceModel>> snapshot,
+      List<ExperienceModel> filtered, bool isMobile) {
     if (snapshot.hasError) {
       return SliverToBoxAdapter(child: _errorWidget(snapshot.error.toString()));
     }
-
     if (snapshot.connectionState == ConnectionState.waiting) {
-      return SliverToBoxAdapter(
-          child: LoadingShimmer(isMobile: isMobile, count: isMobile ? 3 : 4));
+      return SliverToBoxAdapter(child: LoadingShimmer(isMobile: isMobile, count: isMobile ? 3 : 4));
     }
-
     if (filtered.isEmpty) {
       return SliverToBoxAdapter(child: _emptyWidget(context));
     }
@@ -441,8 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLoadMoreButton(BuildContext context,
-      List<ExperienceModel> currentList, ExperienceProvider provider) {
+  Widget _buildLoadMoreButton(BuildContext context, List<ExperienceModel> currentList, ExperienceProvider provider) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
@@ -451,18 +464,15 @@ class _HomeScreenState extends State<HomeScreen> {
             : TextButton.icon(
                 onPressed: () => provider.loadMore(currentList),
                 icon: const Icon(Icons.expand_more, color: AppTheme.white),
-                label: const Text('Cargar más',
-                    style: TextStyle(color: AppTheme.white, fontSize: 15)),
+                label: const Text('Cargar más', style: TextStyle(color: AppTheme.white, fontSize: 15)),
               ),
       ),
     );
   }
 
   void _navigateToAdd(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AddExperienceScreen()),
-    ).then((_) => _loadStats());
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const AddExperienceScreen()))
+        .then((_) => _loadStats());
   }
 
   Widget _emptyWidget(BuildContext context) {
@@ -471,29 +481,18 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.all(20),
         padding: const EdgeInsets.all(36),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined,
-                size: 64, color: Colors.white.withValues(alpha:0.7)),
+            Icon(Icons.inbox_outlined, size: 64, color: Colors.white.withValues(alpha: 0.7)),
             const SizedBox(height: 16),
-            Text(
-              'Sin resultados',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha:0.9),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
+            Text('Sin resultados', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(
-              'No se encontraron experiencias con los filtros actuales.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha:0.7), fontSize: 14),
-            ),
+            Text('No se encontraron experiencias con los filtros actuales.', textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
           ],
         ),
       ),
@@ -506,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.all(20),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -514,16 +513,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Icon(Icons.error_outline, color: AppTheme.white, size: 48),
             const SizedBox(height: 12),
-            const Text('Error al cargar datos',
-                style: TextStyle(
-                    color: AppTheme.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold)),
+            const Text('Error al cargar datos', style: TextStyle(color: AppTheme.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(error,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.8), fontSize: 13)),
+            Text(error, textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13)),
           ],
         ),
       ),
