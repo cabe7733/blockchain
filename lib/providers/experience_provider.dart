@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/experience_model.dart';
 import '../services/firestore_service.dart';
+import '../services/ai_service.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 /// Provider para gestionar el listado de experiencias,
 /// filtros activos y paginación.
@@ -11,6 +13,23 @@ import '../services/firestore_service.dart';
 /// [cloud_firestore/failed-precondition] que requiere índices compuestos.
 class ExperienceProvider extends ChangeNotifier {
   final FirestoreService _service = FirestoreService();
+  final AIService _aiService = AIService(
+    apiKey: const String.fromEnvironment(
+      'GEMINI_API_KEY',
+      defaultValue: 'AIzaSyAeTWH1cPoUdBlzXBLoQ1Opey7OnKU7NQk',
+    ),
+  );
+
+  AIService get aiService => _aiService;
+
+  // ── Estado del Copilot ──────────────────────────────────────
+  final List<Map<String, String>> _chatMessages = [];
+  bool _isAiResponding = false;
+  ChatSession? _chatSession;
+
+  List<Map<String, String>> get chatMessages => _chatMessages;
+  bool get isAiResponding => _isAiResponding;
+  bool get isAiEnabled => _aiService.isEnabled;
 
   // ── Estado de filtros ──────────────────────────────────────
   String _searchQuery = '';
@@ -137,4 +156,85 @@ class ExperienceProvider extends ChangeNotifier {
       _service.updateExperience(id, data);
 
   Future<void> deleteExperience(String id) => _service.deleteExperience(id);
+
+  // ── Métodos del Copilot Chatbot ────────────────────────────
+  Future<void> initCopilotSession() async {
+    if (!isAiEnabled) return;
+    
+    // Si ya hay una sesión activa, no hacemos nada a menos que se fuerce el reinicio.
+    if (_chatSession != null) return;
+
+    _isAiResponding = true;
+    notifyListeners();
+
+    try {
+      // 1. Obtener todas las experiencias en formato compacto
+      final experiences = await _service.getAllExperiencesCompact();
+      
+      // 2. Iniciar sesión de chat con el contexto inyectado
+      _chatSession = _aiService.startCopilotSession(experiences);
+      
+      // 3. Limpiar mensajes anteriores y agregar mensaje de bienvenida
+      if (_chatMessages.isEmpty) {
+        _chatMessages.add({
+          'sender': 'copilot',
+          'text': '¡Hola! Soy tu Copilot de Blockchain Empresarial. Analizo todas las lecciones aprendidas y registros cargados en la plataforma. ¿En qué puedo ayudarte hoy?'
+        });
+      }
+    } catch (e) {
+      debugPrint('Error al inicializar Copilot: $e');
+    } finally {
+      _isAiResponding = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> sendCopilotMessage(String message) async {
+    if (!isAiEnabled || message.trim().isEmpty) return;
+
+    // Asegurar que la sesión de chat esté inicializada
+    if (_chatSession == null) {
+      await initCopilotSession();
+    }
+
+    if (_chatSession == null) return;
+
+    // 1. Agregar el mensaje del usuario
+    _chatMessages.add({
+      'sender': 'user',
+      'text': message,
+    });
+    _isAiResponding = true;
+    notifyListeners();
+
+    try {
+      // 2. Enviar a Gemini y esperar respuesta
+      final response = await _chatSession!.sendMessage(Content.text(message));
+      final replyText = response.text ?? 'Lo siento, no he podido procesar esa pregunta.';
+      
+      // 3. Agregar respuesta de la IA
+      _chatMessages.add({
+        'sender': 'copilot',
+        'text': replyText,
+      });
+    } catch (e, stack) {
+      debugPrint('=== Error en sendCopilotMessage ===');
+      debugPrint('Tipo: ${e.runtimeType}');
+      debugPrint('Mensaje: $e');
+      debugPrint('Stack: $stack');
+      _chatMessages.add({
+        'sender': 'copilot',
+        'text': '⚠️ Hubo un error de conexión con el servicio de IA. Inténtalo de nuevo más tarde.',
+      });
+    } finally {
+      _isAiResponding = false;
+      notifyListeners();
+    }
+  }
+
+  void clearChat() {
+    _chatMessages.clear();
+    _chatSession = null;
+    initCopilotSession();
+  }
 }

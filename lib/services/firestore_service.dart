@@ -69,6 +69,27 @@ class FirestoreService {
     }
   }
 
+  // ── Obtener todas las experiencias en formato compacto para el RAG de IA ──
+  Future<List<Map<String, dynamic>>> getAllExperiencesCompact() async {
+    try {
+      final snap = await _db.collection(_col).get();
+      return snap.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'companyName': data['companyName'] as String? ?? '',
+          'industry': data['industry'] as String? ?? '',
+          'summary': data['summary'] as String? ?? '',
+          'tags': data['tags'] != null ? List<String>.from(data['tags'] as List) : <String>[],
+          'keyChallenges': data['keyChallenges'] != null ? List<String>.from(data['keyChallenges'] as List) : <String>[],
+          'keyBenefits': data['keyBenefits'] != null ? List<String>.from(data['keyBenefits'] as List) : <String>[],
+        };
+      }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
   // ── Estadísticas del dashboard ─────────────────────────────
   Future<Map<String, dynamic>> getStats() async {
     try {

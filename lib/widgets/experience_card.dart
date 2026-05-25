@@ -199,6 +199,32 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                   // Industry badge
                   IndustryBadge(industry: widget.experience.industry),
                   const SizedBox(height: AppSpacing.md),
+
+                  // AI Tags
+                  if (widget.experience.tags.isNotEmpty) ...[
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: widget.experience.tags.take(3).map((tag) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '#$tag',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryBlue,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                   
                   // Summary
                   Text(

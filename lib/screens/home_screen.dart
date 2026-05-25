@@ -15,6 +15,7 @@ import '../widgets/executive_summary_card.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/gradient_button.dart';
 import 'add_experience_screen.dart';
+import '../widgets/copilot_chat_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -133,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final isDark = themeProvider.isDark;
 
     return Scaffold(
+      endDrawer: const CopilotChatDrawer(),
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: SafeArea(
@@ -153,20 +155,54 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
       ),
-      floatingActionButton: isMobile && _tabController.index == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => _navigateToAdd(context),
-              backgroundColor: AppTheme.primaryBlue,
-              icon: const Icon(Icons.add, color: AppTheme.white),
-              label: const Text('Nueva',
-                  style: TextStyle(color: AppTheme.white, fontWeight: FontWeight.bold)),
-            )
-          : null,
+      floatingActionButton: Builder(
+        builder: (ctx) {
+          final isAiEnabled = expProvider.isAiEnabled;
+          final showAddFab = isMobile && _tabController.index == 0;
+
+          if (!isAiEnabled && !showAddFab) return const SizedBox();
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (showAddFab) ...[
+                FloatingActionButton.extended(
+                  heroTag: 'add_exp_fab',
+                  onPressed: () => _navigateToAdd(context),
+                  backgroundColor: AppTheme.primaryBlue,
+                  icon: const Icon(Icons.add, color: AppTheme.white),
+                  label: const Text('Nueva',
+                      style: TextStyle(color: AppTheme.white, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (isAiEnabled)
+                FloatingActionButton(
+                  heroTag: 'copilot_fab',
+                  onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+                  backgroundColor: Colors.transparent,
+                  elevation: 6,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.buttonGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.auto_awesome, color: Colors.amber, size: 24),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 
   Widget _buildAppBar(BuildContext context, userModel, ThemeProvider themeProvider,
       bool isDark, bool isMobile) {
+    final expProvider = context.watch<ExperienceProvider>();
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 14),
       child: Row(
@@ -184,6 +220,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (expProvider.isAiEnabled) ...[
+            Builder(
+              builder: (ctx) => TextButton.icon(
+                onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+                icon: const Icon(Icons.auto_awesome, color: Colors.amber, size: 16),
+                label: const Text('Copilot', style: TextStyle(color: AppTheme.white, fontWeight: FontWeight.bold)),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppTheme.white.withValues(alpha: 0.15),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
           IconButton(
             onPressed: themeProvider.toggle,
             icon: Icon(
