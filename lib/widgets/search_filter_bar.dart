@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../theme/app_theme.dart';
 
 /// Barra de búsqueda y filtros: texto, industria y rango de fechas.
 class SearchFilterBar extends StatelessWidget {
@@ -93,12 +92,13 @@ class SearchFilterBar extends StatelessWidget {
   }
 
   Widget _buildSearchField(BuildContext context) {
+    final theme = Theme.of(context);
     return TextFormField(
       initialValue: searchValue,
       onChanged: onSearchChanged,
       decoration: InputDecoration(
-        hintText: 'Buscar por empresa...',
-        prefixIcon: const Icon(Icons.search, color: AppTheme.primaryBlue),
+        hintText: 'Buscar por empresa, tags...',
+        prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -138,26 +138,27 @@ class SearchFilterBar extends StatelessWidget {
   }
 
   Widget _buildDateButton(BuildContext context) {
+    final theme = Theme.of(context);
     final active = startDate != null || endDate != null;
     return OutlinedButton.icon(
       onPressed: onDateRangePick,
       icon: Icon(
         Icons.date_range,
         size: 16,
-        color: active ? AppTheme.primaryBlue : AppTheme.textGray,
+        color: active ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
       ),
       label: Text(
         dateRangeLabel,
         style: TextStyle(
           fontSize: 12,
-          color: active ? AppTheme.primaryBlue : AppTheme.textGray,
+          color: active ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
         overflow: TextOverflow.ellipsis,
       ),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         side: BorderSide(
-          color: active ? AppTheme.primaryBlue : Colors.grey.shade400,
+          color: active ? theme.colorScheme.primary : Colors.grey.shade400,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -165,9 +166,10 @@ class SearchFilterBar extends StatelessWidget {
   }
 
   Widget _buildClearButton(BuildContext context) {
+    final theme = Theme.of(context);
     return IconButton(
       onPressed: onClearFilters,
-      icon: const Icon(Icons.close, color: AppTheme.textGray),
+      icon: Icon(Icons.close, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
       tooltip: 'Limpiar filtros',
     );
   }

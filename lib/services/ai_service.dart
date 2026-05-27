@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+
+const Duration _aiTimeout = Duration(seconds: 60);
 
 /// Servicio unificado de Inteligencia Artificial usando Google Gemini.
 ///
@@ -64,7 +67,9 @@ Texto de la experiencia:
 ''';
 
     try {
-      final response = await _jsonModel!.generateContent([Content.text(prompt)]);
+      final response = await _jsonModel!.generateContent(
+        [Content.text(prompt)],
+      ).timeout(_aiTimeout, onTimeout: () => throw TimeoutException('Gemini no respondió en 60 segundos.'));
       final jsonText = response.text;
       if (jsonText == null || jsonText.isEmpty) {
         throw Exception('Respuesta vacía de Gemini.');
@@ -89,6 +94,9 @@ Texto de la experiencia:
             ? List<String>.from(parsed['benefits'] as List)
             : <String>[],
       };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) print('Timeout en extractInsights: $e');
+      return {'tags': [], 'challenges': [], 'benefits': []};
     } catch (e) {
       if (kDebugMode) {
         print('Error en extractInsights: $e');

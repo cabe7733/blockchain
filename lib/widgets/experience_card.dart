@@ -128,8 +128,12 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                 borderRadius: AppRadius.borderRadiusLg,
                 border: Border(
                   left: BorderSide(
-                    color: _isHovered ? AppColors.primaryBlue : AppColors.primaryViolet,
-                    width: _isHovered ? 4 : 3,
+                    color: Color.lerp(
+                      AppColors.primaryViolet,
+                      AppColors.primaryBlue,
+                      _controller.value,
+                    )!,
+                    width: 3 + (_controller.value * 1),
                   ),
                 ),
                 boxShadow: [

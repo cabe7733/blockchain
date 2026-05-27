@@ -69,10 +69,14 @@ class FirestoreService {
     }
   }
 
-  // ── Obtener todas las experiencias en formato compacto para el RAG de IA ──
-  Future<List<Map<String, dynamic>>> getAllExperiencesCompact() async {
+  // ── Obtener experiencias compactas para el RAG de IA (limitadas a 100) ──
+  Future<List<Map<String, dynamic>>> getAllExperiencesCompact({int limit = 100}) async {
     try {
-      final snap = await _db.collection(_col).get();
+      final snap = await _db
+          .collection(_col)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
       return snap.docs.map((doc) {
         final data = doc.data();
         return {

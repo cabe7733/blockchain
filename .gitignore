@@ -48,3 +48,6 @@ app.*.map.json
 .opencode/
 opencode.json
 
+# Environment variables (contains secrets)
+.env
+

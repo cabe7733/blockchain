@@ -111,7 +111,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
         _keyBenefits.addAll(insights['benefits'] ?? []);
       });
 
-      _showSnackBar('✨ Insights y etiquetas extraídos exitosamente.', isError: false);
+      _showSnackBar('Insights y etiquetas extraídos exitosamente.', isError: false);
     } catch (e) {
       _showSnackBar('Error al analizar con IA: $e', isError: true);
     } finally {
@@ -172,7 +172,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
       }
 
       if (mounted) {
-        _showSnackBar('✅ Experiencia guardada exitosamente', isError: false);
+        _showSnackBar('Experiencia guardada exitosamente', isError: false);
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) Navigator.pop(context);
       }
@@ -349,7 +349,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
                         )
                       : const Icon(Icons.auto_awesome, color: Colors.amber, size: 18),
                   label: Text(
-                    _isAnalyzing ? 'Analizando con IA...' : '✨ Analizar e Instalar Insights con IA',
+                    _isAnalyzing ? 'Analizando con IA...' : 'Analizar e Instalar Insights con IA',
                     style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                   ),
                 ),
@@ -487,7 +487,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
             OutlinedButton.icon(
               onPressed: _isSaving ? null : _pickFiles,
               icon: const Icon(Icons.attach_file, size: 18),
-              label: const Text('📎 Adjuntar PDF'),
+              label: const Text('Adjuntar PDF'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.primaryBlue,
                 side: const BorderSide(
@@ -592,7 +592,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
 
             // Botón guardar
             GradientButton(
-              label: '💾 Guardar Experiencia',
+              label: 'Guardar Experiencia',
               onPressed: _isSaving ? null : _save,
               isLoading: _isSaving,
               width: double.infinity,

@@ -297,6 +297,12 @@ class _CopilotChatDrawerState extends State<CopilotChatDrawer> {
               : isDark
                   ? const Color(0xFF1E293B)
                   : const Color(0xFFF1F5F9),
+          border: isUser
+              ? null
+              : Border.all(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -330,6 +336,10 @@ class _CopilotChatDrawerState extends State<CopilotChatDrawer> {
             bottomLeft: Radius.zero,
             bottomRight: Radius.circular(16),
           ),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            width: 1,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -337,13 +347,15 @@ class _CopilotChatDrawerState extends State<CopilotChatDrawer> {
             const Icon(Icons.auto_awesome, color: Colors.amber, size: 14),
             const SizedBox(width: 8),
             Text(
-              'Copilot está analizando...',
+              'Pensando',
               style: TextStyle(
                 fontSize: 12,
                 fontStyle: FontStyle.italic,
                 color: isDark ? AppTheme.textGray : const Color(0xFF64748B),
               ),
             ),
+            const SizedBox(width: 4),
+            const _AnimatedDots(),
           ],
         ),
       ),
@@ -404,7 +416,6 @@ class _CopilotChatDrawerState extends State<CopilotChatDrawer> {
     );
   }
 
-  /// Parser manual de Markdown básico (negrita, encabezados, listas) para renderizado Premium.
   Widget _buildParsedText(String text, bool isUser, bool isDark) {
     final Color textColor = isUser
         ? AppTheme.white
@@ -419,21 +430,18 @@ class _CopilotChatDrawerState extends State<CopilotChatDrawer> {
       );
     }
 
-    // Para la respuesta de la IA (Copilot), parseamos negritas (**texto**) y viñetas (- ).
     final List<TextSpan> spans = [];
     final lines = text.split('\n');
 
     for (int i = 0; i < lines.length; i++) {
       var line = lines[i];
-      
-      // Manejo de viñeta markdown
+
       bool isBullet = false;
       if (line.startsWith('- ') || line.startsWith('* ')) {
         isBullet = true;
         line = '•  ${line.substring(2)}';
       }
 
-      // Parsear negritas **texto**
       final regex = RegExp(r'\*\*(.*?)\*\*');
       int currentPos = 0;
       final List<TextSpan> lineSpans = [];
@@ -460,7 +468,6 @@ class _CopilotChatDrawerState extends State<CopilotChatDrawer> {
         ));
       }
 
-      // Añadir salto de línea si no es la última línea
       if (i < lines.length - 1) {
         lineSpans.add(const TextSpan(text: '\n'));
       }
@@ -477,8 +484,62 @@ class _CopilotChatDrawerState extends State<CopilotChatDrawer> {
     return RichText(
       text: TextSpan(
         children: spans,
-        style: TextStyle(color: textColor, fontFamily: 'Outfit'),
+        style: TextStyle(color: textColor),
       ),
+    );
+  }
+}
+
+class _AnimatedDots extends StatefulWidget {
+  const _AnimatedDots();
+
+  @override
+  State<_AnimatedDots> createState() => _AnimatedDotsState();
+}
+
+class _AnimatedDotsState extends State<_AnimatedDots> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final delay = i * 0.15;
+            final value = ((_controller.value - delay) % 1.0).clamp(0.0, 1.0);
+            final opacity = value < 0.5 ? value * 2 : (1 - value) * 2;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 1.5),
+              child: Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: opacity * 0.7),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }
