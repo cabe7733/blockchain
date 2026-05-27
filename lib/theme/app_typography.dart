@@ -6,7 +6,7 @@ import 'app_colors.dart';
 class AppTypography {
   AppTypography._();
 
-  static const String _fontFamily = 'Roboto';
+  static const String _fontFamily = 'Outfit';
 
   // ── Display: Títulos principales (hero sections) ─────────────────
   static TextStyle get displayLarge => const TextStyle(

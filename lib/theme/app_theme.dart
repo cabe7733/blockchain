@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 import 'app_colors.dart';
 import 'app_typography.dart';
 import 'component_theme.dart';
@@ -31,7 +32,14 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      fontFamily: 'Roboto',
+      fontFamily: 'Outfit',
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       colorScheme: const ColorScheme.light(
         primary: primaryBlue,
         secondary: primaryViolet,
@@ -48,7 +56,7 @@ class AppTheme {
       elevatedButtonTheme: ComponentTheme.elevatedButtonTheme,
       textButtonTheme: ComponentTheme.textButtonTheme,
       outlinedButtonTheme: ComponentTheme.outlinedButtonTheme,
-      cardTheme: ComponentTheme.cardTheme,
+      cardTheme: ComponentTheme.cardTheme(),
       chipTheme: ComponentTheme.chipTheme,
       dialogTheme: ComponentTheme.dialogThemeData,
       snackBarTheme: ComponentTheme.snackbarTheme,
@@ -65,7 +73,14 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      fontFamily: 'Roboto',
+      fontFamily: 'Outfit',
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primaryBlueLight,
         secondary: AppColors.primaryVioletLight,
@@ -98,9 +113,7 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.primaryBlueLight, width: 2),
         ),
       ),
-      cardTheme: ComponentTheme.cardTheme.copyWith(
-        color: AppColors.darkSurface,
-      ),
+      cardTheme: ComponentTheme.cardTheme(isDark: true),
       dialogTheme: ComponentTheme.dialogThemeData.copyWith(
         backgroundColor: AppColors.darkSurface,
       ),

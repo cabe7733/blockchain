@@ -12,6 +12,9 @@ class ExperienceModel {
   final String createdByCompany; // Empresa del autor
   final List<AttachmentModel> attachments;
   final DateTime createdAt;
+  final List<String> tags;
+  final List<String> keyChallenges;
+  final List<String> keyBenefits;
 
   ExperienceModel({
     required this.id,
@@ -24,6 +27,9 @@ class ExperienceModel {
     required this.createdByCompany,
     required this.attachments,
     required this.createdAt,
+    this.tags = const [],
+    this.keyChallenges = const [],
+    this.keyBenefits = const [],
   });
 
   int get totalAttachments => attachments.length;
@@ -49,6 +55,13 @@ class ExperienceModel {
       createdAt: data['createdAt'] is Timestamp
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      tags: data['tags'] != null ? List<String>.from(data['tags'] as List) : [],
+      keyChallenges: data['keyChallenges'] != null
+          ? List<String>.from(data['keyChallenges'] as List)
+          : [],
+      keyBenefits: data['keyBenefits'] != null
+          ? List<String>.from(data['keyBenefits'] as List)
+          : [],
     );
   }
 
@@ -63,6 +76,9 @@ class ExperienceModel {
       'createdByCompany': createdByCompany,
       'attachments': attachments.map((a) => a.toMap()).toList(),
       'createdAt': Timestamp.fromDate(createdAt),
+      'tags': tags,
+      'keyChallenges': keyChallenges,
+      'keyBenefits': keyBenefits,
     };
   }
 }

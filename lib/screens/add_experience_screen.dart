@@ -29,6 +29,11 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
   bool   _isSaving      = false;
   String _statusMessage = '';
 
+  final List<String> _tags = [];
+  final List<String> _keyChallenges = [];
+  final List<String> _keyBenefits = [];
+  bool _isAnalyzing = false;
+
   static const List<String> _industries = [
     'Finanzas', 'Logística', 'Salud', 'Retail',
     'Manufactura', 'Gobierno', 'Educación', 'Otro',
@@ -75,6 +80,47 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
 
   void _removeFile(int index) => setState(() => _files.removeAt(index));
 
+  Future<void> _analyzeWithAI() async {
+    final summaryText = _summaryCtrl.text.trim();
+    if (summaryText.length < 50) {
+      _showSnackBar('El resumen debe tener al menos 50 caracteres para ser analizado.', isError: true);
+      return;
+    }
+
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      final expProvider = context.read<ExperienceProvider>();
+      if (!expProvider.isAiEnabled) {
+        _showSnackBar('El servicio de IA no está habilitado.', isError: true);
+        return;
+      }
+
+      final insights = await expProvider.aiService.extractInsights(summaryText);
+      
+      setState(() {
+        _tags.clear();
+        _tags.addAll(insights['tags'] ?? []);
+        
+        _keyChallenges.clear();
+        _keyChallenges.addAll(insights['challenges'] ?? []);
+        
+        _keyBenefits.clear();
+        _keyBenefits.addAll(insights['benefits'] ?? []);
+      });
+
+      _showSnackBar('Insights y etiquetas extraídos exitosamente.', isError: false);
+    } catch (e) {
+      _showSnackBar('Error al analizar con IA: $e', isError: true);
+    } finally {
+      setState(() {
+        _isAnalyzing = false;
+      });
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _isSaving = true; _statusMessage = 'Creando registro...'; });
@@ -97,6 +143,9 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
         createdByCompany: user?.company ?? '',
         attachments: [],
         createdAt: now,
+        tags: _tags,
+        keyChallenges: _keyChallenges,
+        keyBenefits: _keyBenefits,
       );
       final docId = await expProvider.addExperience(newExp);
 
@@ -123,7 +172,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
       }
 
       if (mounted) {
-        _showSnackBar('✅ Experiencia guardada exitosamente', isError: false);
+        _showSnackBar('Experiencia guardada exitosamente', isError: false);
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) Navigator.pop(context);
       }
@@ -283,6 +332,147 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
                     'y lecciones aprendidas (mínimo 50 caracteres)...',
               ),
             ),
+            if (context.watch<ExperienceProvider>().isAiEnabled) ...[
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _isAnalyzing || _isSaving ? null : _analyzeWithAI,
+                  icon: _isAnalyzing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        )
+                      : const Icon(Icons.auto_awesome, color: Colors.amber, size: 18),
+                  label: Text(
+                    _isAnalyzing ? 'Analizando con IA...' : 'Analizar e Instalar Insights con IA',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                  ),
+                ),
+              ),
+            ],
+            if (_tags.isNotEmpty || _keyChallenges.isNotEmpty || _keyBenefits.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                      : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: Colors.amber, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Insights Generados por IA',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppTheme.white
+                                : const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    
+                    // Tags / Etiquetas
+                    if (_tags.isNotEmpty) ...[
+                      const Text(
+                        'Etiquetas Sugeridas:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textGray),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: _tags.map((tag) {
+                          return Chip(
+                            label: Text(tag, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                            backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            side: BorderSide.none,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            deleteIcon: const Icon(Icons.close, size: 14, color: AppTheme.primaryBlue),
+                            onDeleted: () => setState(() => _tags.remove(tag)),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    
+                    // Retos
+                    if (_keyChallenges.isNotEmpty) ...[
+                      const Text(
+                        'Retos Clave Identificados:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textGray),
+                      ),
+                      const SizedBox(height: 6),
+                      ..._keyChallenges.map((challenge) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(top: 4, right: 8),
+                              child: Icon(Icons.error_outline_rounded, color: Colors.orange, size: 14),
+                            ),
+                            Expanded(
+                              child: Text(
+                                challenge,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                      const SizedBox(height: 12),
+                    ],
+                    
+                    // Beneficios
+                    if (_keyBenefits.isNotEmpty) ...[
+                      const Text(
+                        'Beneficios y Lecciones:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textGray),
+                      ),
+                      const SizedBox(height: 6),
+                      ..._keyBenefits.map((benefit) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(top: 4, right: 8),
+                              child: Icon(Icons.check_circle_outline, color: AppTheme.successGreen, size: 14),
+                            ),
+                            Expanded(
+                              child: Text(
+                                benefit,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                    ],
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
 
             // Adjuntos
@@ -297,7 +487,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
             OutlinedButton.icon(
               onPressed: _isSaving ? null : _pickFiles,
               icon: const Icon(Icons.attach_file, size: 18),
-              label: const Text('📎 Adjuntar PDF'),
+              label: const Text('Adjuntar PDF'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.primaryBlue,
                 side: const BorderSide(
@@ -402,7 +592,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
 
             // Botón guardar
             GradientButton(
-              label: '💾 Guardar Experiencia',
+              label: 'Guardar Experiencia',
               onPressed: _isSaving ? null : _save,
               isLoading: _isSaving,
               width: double.infinity,

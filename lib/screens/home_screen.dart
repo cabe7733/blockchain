@@ -15,6 +15,7 @@ import '../widgets/executive_summary_card.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/gradient_button.dart';
 import 'add_experience_screen.dart';
+import '../widgets/copilot_chat_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,23 +24,37 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Map<String, dynamic>? _stats;
   bool _statsLoading = true;
   bool _exportingPdf = false;
   late TabController _tabController;
+  final ScrollController _scrollCtrl = ScrollController();
+  List<ExperienceModel> _allExperiences = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _scrollCtrl.addListener(_onScroll);
     _loadStats();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 300) {
+      final provider = context.read<ExperienceProvider>();
+      if (!provider.isLoadingMore && provider.hasMore && _allExperiences.isNotEmpty) {
+        provider.loadMore(_allExperiences);
+      }
+    }
   }
 
   Future<void> _loadStats() async {
@@ -133,10 +148,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final isDark = themeProvider.isDark;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
-        child: SafeArea(
-          child: Column(
+      endDrawer: const CopilotChatDrawer(),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: AppTheme.backgroundGradient),
+            ),
+          ),
+          SafeArea(
+            child: Column(
             children: [
               _buildAppBar(context, user, themeProvider, isDark, isMobile),
               _buildTabBar(isMobile),
@@ -152,21 +173,56 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
         ),
+      ],
+    ),
+      floatingActionButton: Builder(
+        builder: (ctx) {
+          final isAiEnabled = expProvider.isAiEnabled;
+          final showAddFab = isMobile && _tabController.index == 0;
+
+          if (!isAiEnabled && !showAddFab) return const SizedBox();
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (showAddFab) ...[
+                FloatingActionButton.extended(
+                  heroTag: 'add_exp_fab',
+                  onPressed: () => _navigateToAdd(context),
+                  backgroundColor: AppTheme.primaryBlue,
+                  icon: const Icon(Icons.add, color: AppTheme.white),
+                  label: const Text('Nueva',
+                      style: TextStyle(color: AppTheme.white, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (isAiEnabled)
+                FloatingActionButton(
+                  heroTag: 'copilot_fab',
+                  onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+                  backgroundColor: Colors.transparent,
+                  elevation: 6,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.buttonGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.auto_awesome, color: Colors.amber, size: 24),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
-      floatingActionButton: isMobile && _tabController.index == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => _navigateToAdd(context),
-              backgroundColor: AppTheme.primaryBlue,
-              icon: const Icon(Icons.add, color: AppTheme.white),
-              label: const Text('Nueva',
-                  style: TextStyle(color: AppTheme.white, fontWeight: FontWeight.bold)),
-            )
-          : null,
     );
   }
 
   Widget _buildAppBar(BuildContext context, userModel, ThemeProvider themeProvider,
       bool isDark, bool isMobile) {
+    final expProvider = context.watch<ExperienceProvider>();
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 14),
       child: Row(
@@ -184,6 +240,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (expProvider.isAiEnabled) ...[
+            Builder(
+              builder: (ctx) => TextButton.icon(
+                onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+                icon: const Icon(Icons.auto_awesome, color: Colors.amber, size: 16),
+                label: const Text('Copilot', style: TextStyle(color: AppTheme.white, fontWeight: FontWeight.bold)),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppTheme.white.withValues(alpha: 0.15),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
           IconButton(
             onPressed: themeProvider.toggle,
             icon: Icon(
@@ -256,33 +327,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: AppTheme.primaryDark,
         unselectedLabelColor: Colors.white70,
-        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         dividerColor: Colors.transparent,
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.library_books_outlined, 
-                  size: 18, color: _tabController.index == 0 
-                    ? AppTheme.primaryDark : Colors.white70),
-                const SizedBox(width: 8),
-                const Text('Experiencias'),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.analytics_outlined, 
-                  size: 18, color: _tabController.index == 1 
-                    ? AppTheme.primaryDark : Colors.white70),
-                const SizedBox(width: 8),
-                const Text('Estadísticas'),
-              ],
-            ),
-          ),
+        tabs: const [
+          Tab(text: 'Experiencias', icon: Icon(Icons.library_books_outlined, size: 18)),
+          Tab(text: 'Estadísticas', icon: Icon(Icons.analytics_outlined, size: 18)),
         ],
       ),
     );
@@ -292,21 +340,50 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return StreamBuilder<List<ExperienceModel>>(
       stream: expProvider.experiencesStream,
       builder: (context, snapshot) {
-        final allExp = snapshot.data ?? [];
-        final filtered = expProvider.filteredExperiences(allExp);
+        _allExperiences = snapshot.data ?? [];
+        final filtered = expProvider.filteredExperiences(_allExperiences);
 
         return CustomScrollView(
+          controller: _scrollCtrl,
           slivers: [
             SliverToBoxAdapter(
               child: _buildToolbar(context, filtered, isMobile, expProvider),
             ),
+            if (filtered.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: isMobile ? 16 : 32,
+                    bottom: 4,
+                  ),
+                  child: Text(
+                    '${filtered.length} experiencia${filtered.length != 1 ? 's' : ''} encontrada${filtered.length != 1 ? 's' : ''}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 12),
               sliver: _buildContent(context, snapshot, filtered, isMobile),
             ),
-            if (expProvider.hasMore && filtered.isNotEmpty)
-              SliverToBoxAdapter(
-                child: _buildLoadMoreButton(context, allExp, expProvider),
+            if (expProvider.isLoadingMore)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppTheme.white,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
@@ -389,7 +466,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Row(
               children: [
                 GradientButton(
-                  label: '➕ Registrar Nueva Experiencia',
+                  icon: Icons.add_circle_outline,
+                  label: 'Registrar Nueva Experiencia',
                   onPressed: () => _navigateToAdd(context),
                   height: 44,
                   fontSize: 13,
@@ -401,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ? const SizedBox(width: 14, height: 14, 
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue))
                       : const Icon(Icons.picture_as_pdf_outlined, size: 16),
-                  label: const Text('📄 Exportar Reporte'),
+                  label: const Text('Exportar Reporte'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.white,
                     side: const BorderSide(color: AppTheme.white),
@@ -456,17 +534,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildLoadMoreButton(BuildContext context, List<ExperienceModel> currentList, ExperienceProvider provider) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: provider.isLoadingMore
-            ? const CircularProgressIndicator(color: AppTheme.white)
-            : TextButton.icon(
-                onPressed: () => provider.loadMore(currentList),
-                icon: const Icon(Icons.expand_more, color: AppTheme.white),
-                label: const Text('Cargar más', style: TextStyle(color: AppTheme.white, fontSize: 15)),
-              ),
-      ),
+    return TextButton.icon(
+      onPressed: () => provider.loadMore(currentList),
+      icon: const Icon(Icons.expand_more, color: AppTheme.white),
+      label: const Text('Cargar más', style: TextStyle(color: AppTheme.white, fontSize: 15)),
     );
   }
 

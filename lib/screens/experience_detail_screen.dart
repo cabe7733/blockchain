@@ -136,6 +136,35 @@ class _ExperienceDetailScreenState extends State<ExperienceDetailScreen> {
                   industry: widget.experience.industry, fontSize: 13),
             ],
           ),
+          // ── Tags ──────────────────────────────────────────
+          if (widget.experience.tags.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: widget.experience.tags.map((tag) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryBlue,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
           const SizedBox(height: 16),
 
           // ── Registrado por chip ────────────────────────
@@ -200,6 +229,88 @@ class _ExperienceDetailScreenState extends State<ExperienceDetailScreen> {
               style: const TextStyle(fontSize: 14, height: 1.7),
             ),
           ),
+
+          // ── Insights de IA (Retos y Beneficios) ──────────
+          if (widget.experience.keyChallenges.isNotEmpty || widget.experience.keyBenefits.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 18),
+            
+            // Retos Clave
+            if (widget.experience.keyChallenges.isNotEmpty) ...[
+              Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: Colors.orange, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Retos Técnicos y de Negocio',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppTheme.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...widget.experience.keyChallenges.map((challenge) => Padding(
+                padding: const EdgeInsets.only(bottom: 8, left: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6, right: 10),
+                      child: Icon(Icons.circle, color: Colors.orange, size: 6),
+                    ),
+                    Expanded(
+                      child: Text(
+                        challenge,
+                        style: const TextStyle(fontSize: 13.5, height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 18),
+            ],
+            
+            // Beneficios Clave
+            if (widget.experience.keyBenefits.isNotEmpty) ...[
+              Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: AppTheme.successGreen, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Beneficios y Lecciones Aprendidas',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppTheme.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...widget.experience.keyBenefits.map((benefit) => Padding(
+                padding: const EdgeInsets.only(bottom: 8, left: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6, right: 10),
+                      child: Icon(Icons.circle, color: AppTheme.successGreen, size: 6),
+                    ),
+                    Expanded(
+                      child: Text(
+                        benefit,
+                        style: const TextStyle(fontSize: 13.5, height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+            ],
+          ],
 
           // ── Adjuntos ────────────────────────────────────
           if (widget.experience.attachments.isNotEmpty) ...[

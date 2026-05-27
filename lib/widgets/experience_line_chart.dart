@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
 class ExperienceLineChart extends StatefulWidget {
@@ -16,6 +17,7 @@ class _ExperienceLineChartState extends State<ExperienceLineChart> {
   Widget build(BuildContext context) {
     if (widget.data.isEmpty) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final entries = widget.data.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
     final spots = entries.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.value.toDouble());
@@ -27,15 +29,17 @@ class _ExperienceLineChartState extends State<ExperienceLineChart> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,9 +139,9 @@ class _ExperienceLineChartState extends State<ExperienceLineChart> {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
                           value.toInt().toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
-                            color: AppTheme.textGray,
+                            color: isDark ? AppColors.darkTextSecondary : AppTheme.textGray,
                           ),
                         );
                       },
@@ -152,7 +156,7 @@ class _ExperienceLineChartState extends State<ExperienceLineChart> {
                   horizontalInterval: 1,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: Colors.grey.shade200,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade200,
                       strokeWidth: 1,
                     );
                   },

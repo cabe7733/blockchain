@@ -60,7 +60,6 @@ class ComponentTheme {
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.borderRadiusMd,
       ),
-      textStyle: AppTypography.button,
     ),
   );
 
@@ -75,7 +74,6 @@ class ComponentTheme {
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.borderRadiusMd,
       ),
-      textStyle: AppTypography.labelLarge,
     ),
   );
 
@@ -91,24 +89,27 @@ class ComponentTheme {
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.borderRadiusMd,
       ),
-      textStyle: AppTypography.labelLarge.copyWith(color: AppColors.primaryBlue),
     ),
   );
 
   // ── Card Theme ───────────────────────────────────────────────────
-  static CardThemeData get cardTheme => CardThemeData(
-    color: AppColors.surface,
+  static CardThemeData cardTheme({bool isDark = false}) => CardThemeData(
+    color: isDark ? AppColors.darkSurface : AppColors.surface,
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: AppRadius.borderRadiusLg,
+      side: BorderSide(
+        color: isDark ? AppColors.darkBorder : AppColors.borderLight,
+        width: 1,
+      ),
     ),
     margin: EdgeInsets.zero,
+    surfaceTintColor: Colors.transparent,
   );
 
   // ── Chip Theme ───────────────────────────────────────────────────
   static ChipThemeData get chipTheme => ChipThemeData(
     backgroundColor: AppColors.surfaceVariant,
-    labelStyle: AppTypography.labelMedium,
     padding: const EdgeInsets.symmetric(
       horizontal: AppSpacing.sm,
       vertical: AppSpacing.xs,
@@ -125,12 +126,6 @@ class ComponentTheme {
     scrolledUnderElevation: 0,
     foregroundColor: AppColors.white,
     centerTitle: false,
-    titleTextStyle: TextStyle(
-      fontFamily: 'Roboto',
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: AppColors.white,
-    ),
     iconTheme: IconThemeData(color: AppColors.white),
   );
 
@@ -169,8 +164,6 @@ class ComponentTheme {
   static TabBarThemeData get tabBarThemeData => TabBarThemeData(
     labelColor: AppColors.primaryBlue,
     unselectedLabelColor: AppColors.textSecondary,
-    labelStyle: AppTypography.labelLarge,
-    unselectedLabelStyle: AppTypography.labelMedium,
     indicator: const BoxDecoration(
       color: AppColors.primaryBlue,
       borderRadius: AppRadius.borderRadiusMd,
