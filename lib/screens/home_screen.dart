@@ -145,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
     final isTablet = screenWidth >= 768 && screenWidth < 1100;
+    final isDesktop = screenWidth >= 1100;
     final isDark = themeProvider.isDark;
 
     return Scaffold(
@@ -165,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildExperiencesTab(expProvider, isMobile, isTablet),
+                    _buildExperiencesTab(expProvider, isMobile, isTablet, isDesktop),
                     _buildStatsTab(isMobile, isTablet),
                   ],
                 ),
@@ -336,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildExperiencesTab(ExperienceProvider expProvider, bool isMobile, bool isTablet) {
+  Widget _buildExperiencesTab(ExperienceProvider expProvider, bool isMobile, bool isTablet, bool isDesktop) {
     return StreamBuilder<List<ExperienceModel>>(
       stream: expProvider.experiencesStream,
       builder: (context, snapshot) {
@@ -367,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32, vertical: 12),
-              sliver: _buildContent(context, snapshot, filtered, isMobile),
+              sliver: _buildContent(context, snapshot, filtered, isMobile, isDesktop),
             ),
             if (expProvider.isLoadingMore)
               const SliverToBoxAdapter(
@@ -496,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildContent(BuildContext context, AsyncSnapshot<List<ExperienceModel>> snapshot,
-      List<ExperienceModel> filtered, bool isMobile) {
+      List<ExperienceModel> filtered, bool isMobile, bool isDesktop) {
     if (snapshot.hasError) {
       return SliverToBoxAdapter(child: _errorWidget(snapshot.error.toString()));
     }
@@ -514,6 +515,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.only(bottom: 16),
             child: ExperienceCard(experience: filtered[i]),
           ),
+          childCount: filtered.length,
+        ),
+      );
+    }
+
+    if (isDesktop) {
+      return SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.75,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, i) => ExperienceCard(experience: filtered[i], compact: true),
           childCount: filtered.length,
         ),
       );

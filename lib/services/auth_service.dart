@@ -56,7 +56,6 @@ class AuthService {
         name: name.trim(),
         company: company.trim(),
         email: email.trim(),
-        role: UserRole.viewer, // Rol por defecto: viewer
         createdAt: DateTime.now(),
       );
       await _firestore

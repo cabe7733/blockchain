@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/experience_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/experience_provider.dart';
@@ -11,7 +12,9 @@ import '../utils/validators.dart';
 import '../widgets/gradient_button.dart';
 
 class AddExperienceScreen extends StatefulWidget {
-  const AddExperienceScreen({super.key});
+  final ExperienceModel? experienceToEdit;
+
+  const AddExperienceScreen({super.key, this.experienceToEdit});
 
   @override
   State<AddExperienceScreen> createState() => _AddExperienceScreenState();
@@ -21,6 +24,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
   final _formKey        = GlobalKey<FormState>();
   final _companyCtrl    = TextEditingController();
   final _summaryCtrl    = TextEditingController();
+  final _linkCtrl       = TextEditingController();
   final _storageService = StorageService();
 
   String? _selectedIndustry;
@@ -28,6 +32,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
   final List<Map<String, dynamic>> _files = [];
   bool   _isSaving      = false;
   String _statusMessage = '';
+  bool   _isEditMode    = false;
 
   final List<String> _tags = [];
   final List<String> _keyChallenges = [];
@@ -40,9 +45,26 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final exp = widget.experienceToEdit;
+    if (exp != null) {
+      _isEditMode = true;
+      _companyCtrl.text = exp.companyName;
+      _summaryCtrl.text = exp.summary;
+      _linkCtrl.text = exp.link ?? '';
+      _selectedIndustry = exp.industry;
+      _tags.addAll(exp.tags);
+      _keyChallenges.addAll(exp.keyChallenges);
+      _keyBenefits.addAll(exp.keyBenefits);
+    }
+  }
+
+  @override
   void dispose() {
     _companyCtrl.dispose();
     _summaryCtrl.dispose();
+    _linkCtrl.dispose();
     super.dispose();
   }
 
@@ -123,13 +145,44 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _isSaving = true; _statusMessage = 'Creando registro...'; });
 
     try {
       final authProvider = context.read<AuthProvider>();
       final expProvider  = context.read<ExperienceProvider>();
       final user         = authProvider.userModel;
-      final now          = DateTime.now();
+      final linkValue = _linkCtrl.text.trim();
+
+      if (_isEditMode) {
+        final exp = widget.experienceToEdit!;
+        setState(() { _isSaving = true; _statusMessage = 'Actualizando registro...'; });
+
+        final updateData = <String, dynamic>{
+          'companyName': _companyCtrl.text.trim(),
+          'industry': _selectedIndustry!,
+          'summary': _summaryCtrl.text.trim(),
+          'tags': _tags,
+          'keyChallenges': _keyChallenges,
+          'keyBenefits': _keyBenefits,
+        };
+        if (linkValue.isNotEmpty) {
+          updateData['link'] = linkValue;
+        } else {
+          updateData['link'] = FieldValue.delete();
+        }
+
+        await expProvider.updateExperience(exp.id, updateData);
+
+        if (mounted) {
+          _showSnackBar('Experiencia actualizada exitosamente', isError: false);
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (mounted) Navigator.pop(context);
+        }
+        return;
+      }
+
+      setState(() { _isSaving = true; _statusMessage = 'Creando registro...'; });
+
+      final now = DateTime.now();
 
       // 1. Crear documento base
       final newExp = ExperienceModel(
@@ -146,6 +199,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
         tags: _tags,
         keyChallenges: _keyChallenges,
         keyBenefits: _keyBenefits,
+        link: linkValue.isNotEmpty ? linkValue : null,
       );
       final docId = await expProvider.addExperience(newExp);
 
@@ -229,7 +283,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_ios_new, color: AppTheme.white),
           ),
-          const Text('Nueva Experiencia',
+          Text(_isEditMode ? 'Editar Experiencia' : 'Nueva Experiencia',
               style: TextStyle(
                   color: AppTheme.white,
                   fontSize: 20,
@@ -262,7 +316,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
             const Text('Información de la Experiencia',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Text('Todos los campos con * son obligatorios',
+            const Text('Los campos con * son obligatorios',
                 style:
                     TextStyle(fontSize: 13, color: AppTheme.textGray)),
             const SizedBox(height: 24),
@@ -296,6 +350,21 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
                   .map((i) => DropdownMenuItem(value: i, child: Text(i)))
                   .toList(),
               onChanged: (v) => setState(() => _selectedIndustry = v),
+            ),
+            const SizedBox(height: 18),
+
+            // Link de Referencia (opcional)
+            _label('Link de Referencia'),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _linkCtrl,
+              keyboardType: TextInputType.url,
+              validator: Validators.url,
+              decoration: const InputDecoration(
+                hintText: 'https://ejemplo.com/articulo',
+                prefixIcon: Icon(Icons.link_outlined,
+                    color: AppTheme.primaryBlue),
+              ),
             ),
             const SizedBox(height: 18),
 
@@ -592,7 +661,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
 
             // Botón guardar
             GradientButton(
-              label: 'Guardar Experiencia',
+              label: _isEditMode ? 'Actualizar Experiencia' : 'Guardar Experiencia',
               onPressed: _isSaving ? null : _save,
               isLoading: _isSaving,
               width: double.infinity,

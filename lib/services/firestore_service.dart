@@ -60,7 +60,7 @@ class FirestoreService {
     }
   }
 
-  // ── Eliminar (solo admin) ──────────────────────────────────
+  // ── Eliminar ───────────────────────────────────────────────
   Future<void> deleteExperience(String id) async {
     try {
       await _db.collection(_col).doc(id).delete();
@@ -156,16 +156,20 @@ class FirestoreService {
   // rules_version = '2';
   // service cloud.firestore {
   //   match /databases/{database}/documents {
+  //     // Usuarios: cada usuario solo puede leer/escribir su propio doc
   //     match /users/{userId} {
   //       allow read, write: if request.auth != null
   //                          && request.auth.uid == userId;
   //     }
+  //     // Experiencias: propietario basado en createdBy
   //     match /experiences/{docId} {
   //       allow read: if request.auth != null;
-  //       allow create, update: if request.auth != null;
-  //       allow delete: if request.auth != null &&
-  //         get(/databases/$(database)/documents/users/$(request.auth.uid))
-  //           .data.role == "admin";
+  //       allow create: if request.auth != null
+  //         && request.resource.data.createdBy == request.auth.uid;
+  //       allow update: if request.auth != null
+  //         && resource.data.createdBy == request.auth.uid;
+  //       allow delete: if request.auth != null
+  //         && resource.data.createdBy == request.auth.uid;
   //     }
   //   }
   // }

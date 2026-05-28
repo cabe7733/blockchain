@@ -15,6 +15,7 @@ class ExperienceModel {
   final List<String> tags;
   final List<String> keyChallenges;
   final List<String> keyBenefits;
+  final String? link;
 
   ExperienceModel({
     required this.id,
@@ -30,6 +31,7 @@ class ExperienceModel {
     this.tags = const [],
     this.keyChallenges = const [],
     this.keyBenefits = const [],
+    this.link,
   });
 
   int get totalAttachments => attachments.length;
@@ -62,6 +64,7 @@ class ExperienceModel {
       keyBenefits: data['keyBenefits'] != null
           ? List<String>.from(data['keyBenefits'] as List)
           : [],
+      link: data['link'] as String?,
     );
   }
 
@@ -79,6 +82,7 @@ class ExperienceModel {
       'tags': tags,
       'keyChallenges': keyChallenges,
       'keyBenefits': keyBenefits,
+      if (link != null) 'link': link,
     };
   }
 }

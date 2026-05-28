@@ -97,6 +97,9 @@ class PdfGenerator {
               _detailRow('Fecha de Registro', dateStr),
               _detailRow('Registrado por',
                   '${exp.createdByName} — ${exp.createdByCompany}'),
+              if (exp.link != null && exp.link!.isNotEmpty) ...[
+                _detailRow('Link de Referencia', exp.link!),
+              ],
               pw.SizedBox(height: 12),
               pw.Text('Resumen:',
                   style: pw.TextStyle(

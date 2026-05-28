@@ -51,4 +51,17 @@ class Validators {
     }
     return null;
   }
+
+  static String? url(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final trimmed = value.trim();
+    final regex = RegExp(
+      r'^https?:\/\/([\w-]+\.)+[\w-]+(\/[\w\-\.~:/?#\[\]@!$&()*+,;=]*)?$',
+      caseSensitive: false,
+    );
+    if (!regex.hasMatch(trimmed)) {
+      return 'Ingresa una URL válida (https://...)';
+    }
+    return null;
+  }
 }

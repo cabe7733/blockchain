@@ -11,7 +11,7 @@ class AuthProvider extends ChangeNotifier {
 
   UserModel? get userModel => _userModel;
   bool get isLoadingUser => _isLoadingUser;
-  bool get isAdmin => _userModel?.isAdmin ?? false;
+
 
   // Difiere notifyListeners() al siguiente frame para evitar
   // "setState() called during build"

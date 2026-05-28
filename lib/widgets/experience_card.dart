@@ -13,8 +13,9 @@ import 'attachment_item.dart';
 
 class ExperienceCard extends StatefulWidget {
   final ExperienceModel experience;
+  final bool compact;
 
-  const ExperienceCard({super.key, required this.experience});
+  const ExperienceCard({super.key, required this.experience, this.compact = false});
 
   @override
   State<ExperienceCard> createState() => _ExperienceCardState();
@@ -24,7 +25,6 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
   bool _isHovered = false;
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _shadowAnimation;
 
   @override
   void initState() {
@@ -34,9 +34,6 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
       vsync: this,
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
-      CurvedAnimation(parent: _controller, curve: AppDurations.standard),
-    );
-    _shadowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: AppDurations.standard),
     );
   }
@@ -102,10 +99,11 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = context.watch<AuthProvider>().isAdmin;
+    final authProvider = context.watch<AuthProvider>();
+    final currentUid = authProvider.userModel?.uid ?? '';
+    final isOwner = widget.experience.createdBy == currentUid;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? AppColors.darkSurface : AppColors.white;
-    final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return MouseRegion(
@@ -173,24 +171,24 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
             ),
             
             Padding(
-              padding: AppSpacing.cardPaddingLarge,
+              padding: widget.compact ? AppSpacing.cardPadding : AppSpacing.cardPaddingLarge,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header: Company name + Delete button
+                  // Header: Company name + Owner actions
                   Row(
                     children: [
                       Expanded(
                         child: Text(
                           widget.experience.companyName,
-                          style: AppTypography.titleLarge.copyWith(
+                          style: (widget.compact ? AppTypography.titleMedium : AppTypography.titleLarge).copyWith(
                             color: AppColors.primaryBlue,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (isAdmin)
+                      if (isOwner)
                         _buildActionButton(
                           Icons.delete_outline,
                           AppColors.error,
@@ -198,18 +196,18 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                         ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.sm),
                   
                   // Industry badge
                   IndustryBadge(industry: widget.experience.industry),
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: widget.compact ? AppSpacing.sm : AppSpacing.md),
 
                   // AI Tags
                   if (widget.experience.tags.isNotEmpty) ...[
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
-                      children: widget.experience.tags.take(3).map((tag) {
+                      children: widget.experience.tags.take(widget.compact ? 2 : 3).map((tag) {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -227,20 +225,20 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: widget.compact ? AppSpacing.sm : AppSpacing.md),
                   ],
                   
                   // Summary
                   Text(
                     widget.experience.summary,
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: (widget.compact ? AppTypography.bodySmall : AppTypography.bodyMedium).copyWith(
                       color: textSecondary,
                       height: 1.6,
                     ),
-                    maxLines: 3,
+                    maxLines: widget.compact ? 2 : 3,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: widget.compact ? AppSpacing.sm : AppSpacing.md),
                   
                   // Meta info
                   _buildMetaRow(
@@ -248,7 +246,7 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                     _formattedDate,
                     textSecondary,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(height: widget.compact ? AppSpacing.xs : AppSpacing.sm),
                   _buildMetaRow(
                     Icons.person_outline,
                     '${widget.experience.createdByName} · ${widget.experience.createdByCompany}',
@@ -257,9 +255,9 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                   
                   // Attachments
                   if (widget.experience.attachments.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    const Divider(),
                     const SizedBox(height: AppSpacing.sm),
+                    const Divider(),
+                    const SizedBox(height: AppSpacing.xs),
                     Wrap(
                       spacing: AppSpacing.sm,
                       runSpacing: AppSpacing.sm,
@@ -269,7 +267,7 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                     ),
                   ],
                   
-                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(height: widget.compact ? AppSpacing.md : AppSpacing.lg),
                   
                   // View details button
                   SizedBox(
@@ -297,7 +295,7 @@ class _ExperienceCardState extends State<ExperienceCard> with SingleTickerProvid
                         shape: RoundedRectangleBorder(
                           borderRadius: AppRadius.borderRadiusMd,
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: EdgeInsets.symmetric(vertical: widget.compact ? 10 : 12),
                       ),
                     ),
                   ),

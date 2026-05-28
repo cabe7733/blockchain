@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/experience_model.dart';
+import '../providers/auth_provider.dart';
+import '../providers/experience_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/pdf_generator.dart';
 import '../widgets/industry_badge.dart';
 import '../widgets/attachment_item.dart';
 import '../widgets/gradient_button.dart';
+import 'add_experience_screen.dart';
 
 class ExperienceDetailScreen extends StatefulWidget {
   final ExperienceModel experience;
@@ -18,6 +23,10 @@ class ExperienceDetailScreen extends StatefulWidget {
 
 class _ExperienceDetailScreenState extends State<ExperienceDetailScreen> {
   bool _exportingPdf = false;
+  bool get _isOwner {
+    final authProvider = context.read<AuthProvider>();
+    return authProvider.userModel?.uid == widget.experience.createdBy;
+  }
 
   String get _formattedDate {
     try {
@@ -42,6 +51,90 @@ class _ExperienceDetailScreenState extends State<ExperienceDetailScreen> {
       }
     } finally {
       if (mounted) setState(() => _exportingPdf = false);
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar Experiencia'),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar la experiencia de "${widget.experience.companyName}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed),
+            child: const Text('Eliminar', style: TextStyle(color: AppTheme.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await context.read<ExperienceProvider>().deleteExperience(widget.experience.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Experiencia eliminada correctamente'),
+              backgroundColor: AppTheme.successGreen,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar: $e'),
+              backgroundColor: AppTheme.errorRed,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _navigateToEdit() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddExperienceScreen(
+          experienceToEdit: widget.experience,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, Color color, VoidCallback onTap) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, color: color, size: 20),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openLink() async {
+    final link = widget.experience.link;
+    if (link == null || link.isEmpty) return;
+    final uri = Uri.parse(link);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -83,14 +176,32 @@ class _ExperienceDetailScreenState extends State<ExperienceDetailScreen> {
             icon: const Icon(Icons.arrow_back_ios_new,
                 color: AppTheme.white),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'Detalle de Experiencia',
-              style: TextStyle(
+              style: const TextStyle(
                   color: AppTheme.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold),
             ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isOwner) ...[
+                _buildActionButton(
+                  Icons.edit_outlined,
+                  AppTheme.white,
+                  _navigateToEdit,
+                ),
+                const SizedBox(width: 4),
+                _buildActionButton(
+                  Icons.delete_outline,
+                  AppTheme.errorRed,
+                  _confirmDelete,
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -202,7 +313,57 @@ class _ExperienceDetailScreenState extends State<ExperienceDetailScreen> {
           // ── Fecha ──────────────────────────────────────
           _infoRow(
               Icons.calendar_today_outlined, 'Fecha de Registro', _formattedDate),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
+
+          // ── Link de Referencia (opcional) ──────────────
+          if (widget.experience.link != null && widget.experience.link!.isNotEmpty) ...[
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.link, size: 15, color: AppTheme.primaryBlue),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Link de Referencia',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textGray,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 2),
+                      InkWell(
+                        onTap: _openLink,
+                        child: Text(
+                          widget.experience.link!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryBlue,
+                            decoration: TextDecoration.underline,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _openLink,
+                  icon: const Icon(Icons.open_in_new, size: 18, color: AppTheme.primaryBlue),
+                  tooltip: 'Abrir enlace',
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
 
           const Divider(),
           const SizedBox(height: 18),
