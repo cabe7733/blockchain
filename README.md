@@ -1,411 +1,827 @@
-# 🔗 Blockchain en la Empresa — Experiencias y Aprendizajes v2.0
+# Blockchain en la Empresa — Experiencias y Aprendizajes v2.0
 
-Aplicación web desarrollada con **Flutter Web** y **Firebase** para registrar, consultar y analizar experiencias aprendidas en implementaciones de blockchain empresarial.
+![Flutter](https://img.shields.io/badge/Flutter-≥3.22.0-02569B?style=flat-square&logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-≥3.3.0-0175C2?style=flat-square&logo=dart)
+![Firebase](https://img.shields.io/badge/Firebase-9.6.0-FFCA28?style=flat-square&logo=firebase)
+![MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+> **Plataforma web para el registro, consulta y análisis de lecciones aprendidas en implementaciones de tecnología blockchain en empresas de diversos sectores industriales.**
 
 ---
 
-## 📋 Descripción
+## 📋 Tabla de Contenidos
 
-Sistema centralizado con autenticación, dashboard de métricas y gráficos, búsqueda con filtros, paginación, exportación a PDF, **asistente AI Copilot con RAG**, extracción inteligente de insights mediante **Gemini API**, modo oscuro y un sistema de diseño propio. Permite a equipos documentar implementaciones blockchain y compartir conocimiento organizacional.
+1. [Descripción del Proyecto](#-descripción-del-proyecto)
+2. [Características Principales](#-características-principales)
+3. [Stack Tecnológico](#-stack-tecnológico)
+4. [Arquitectura del Proyecto](#-arquitectura-del-proyecto)
+5. [Modelo de Datos](#-modelo-de-datos)
+6. [Sistema de Permisos y Roles](#-sistema-de-permisos-y-roles)
+7. [Requisitos Previos](#-requisitos-previos)
+8. [Configuración de Firebase](#-configuración-de-firebase)
+9. [Instalación y Ejecución](#-instalación-y-ejecución)
+10. [Integración de IA](#-integración-de-ia)
+11. [Sistema de Diseño](#-sistema-de-diseño)
+12. [Dashboard y Analíticas](#-dashboard-y-analíticas)
+13. [Exportación de Reportes](#-exportación-de-reportes)
+14. [Seguridad en Producción](#-seguridad-en-producción)
+15. [Solución de Problemas](#-solución-de-problemas)
+16. [Decisiones Técnicas](#-decisiones-técnicas)
 
 ---
 
-## ✨ Características
+## 📖 Descripción del Proyecto
+
+**Blockchain en la Empresa — Experiencias y Aprendizajes** es una aplicación web desarrollada con Flutter que permite a profesionales y organizaciones registrar, explorar y aprender de las experiencias de implementación de tecnología blockchain en el entorno empresarial.
+
+La plataforma facilita:
+
+- **Registro de experiencias** con información detallada (empresa, industria, resumen, retos, beneficios, archivos adjuntos)
+- **Análisis automatizado mediante IA** para extraer etiquetas, retos clave y beneficios de cada experiencia
+- **Búsqueda y filtrado** por empresa, industria, rango de fechas, tags y contenido textual
+- **Dashboard analítico** con métricas, gráficos de distribución por industria y tendencias temporales
+- **Copilot conversacional** potenciado por RAG (Retrieval Augmented Generation) que responde preguntas sobre las experiencias registradas
+- **Exportación de reportes** en formato PDF para compartir y archivar
+
+### Diferencias con la versión 1.0
+
+- Integración de **Google Gemini 2.5 Flash** para análisis de contenido y copilot conversacional
+- Sistema de **gráficos interactivos** para visualización de datos
+- Diseño **responsive mejorado** (hasta 4 columnas en desktop)
+- **Shimmer loading** para mejor percepción de rendimiento
+- Extracción automática de **insights mediante IA**
+
+---
+
+## ✨ Características Principales
 
 | Característica | Descripción |
-|---|---|
-| 🔐 Autenticación | Email/Password con Firebase Auth + recuperación de contraseña |
-| 👤 Roles | admin (eliminar) / viewer |
-| 🌙 Modo Oscuro | Toggle con ThemeProvider |
-| ⏱️ Tiempo Real | StreamBuilder sobre Firestore |
-| 📄 Export PDF | Reporte de lista + detalle individual |
-| 🔍 Búsqueda | Local por empresa + filtro industria + rango fechas + tags |
-| 📱 Responsivo | Mobile 1col / Tablet 2col / Desktop 2col |
-| ✅ Validaciones | Formularios + archivos (solo PDF, max 10MB) |
-| 📊 Dashboard | 4 métricas + gráfico de industrias + tendencia mensual + resumen ejecutivo |
-| ♾️ Paginación | .limit(10) + startAfterDocument |
-| 🌀 Shimmer | Skeleton loader con forma real |
-| 🤖 AI Copilot | Chat contextual con RAG sobre todas las experiencias (Gemini 2.5 Flash) |
-| 🏷️ AI Insights | Extracción automática de tags, retos y beneficios al crear experiencias |
-| 🎨 Design System | Sistema de diseño propio con colores, tipografía, componentes y espaciado |
+|----------------|-------------|
+| **Autenticación** | Email/Password con Firebase Auth, incluyendo recuperación de contraseña |
+| **Gestión de Experiencias** | CRUD completo con soporte para edición y eliminación por parte del propietario |
+| **Tiempo Real** | StreamBuilder sobre Firestore para actualizaciones instantáneas |
+| **Búsqueda Local** | Filtrado por empresa, industria, rango de fechas, tags, resumen, retos y beneficios |
+| **Dark Mode** | Toggle entre modo claro y oscuro con persistencia en sesión |
+| **Responsive Design** | 1 columna (móvil) / 2 columnas (tablet) / **4 columnas** (desktop) |
+| **Exportación PDF** | Reporte colectivo (landscape) y detalle individual (portrait) |
+| **AI Copilot** | Chat conversacional con contexto RAG sobre todas las experiencias |
+| **AI Insights** | Extracción automática de tags, retos y beneficios al registrar |
+| **Shimmer Loading** | Skeleton loaders que replican la estructura de las cards reales |
+| **Paginación Infinita** | Scroll infinito con `startAfterDocument` y límite de 10 documentos |
+| **Sistema de Diseño** | Colores, tipografía, espaciado y componentes consistentes |
+| **Validaciones** | Formularios con validación de campos obligatorios y archivos (PDF, 10MB máx.) |
+| **Link de Referencia** | Campo opcional para vincular a artículos o recursos externos |
 
 ---
 
-## 🖥 Stack Tecnológico
+## 🛠 Stack Tecnológico
 
-| Tecnología | Versión |
-|---|---|
-| Flutter Web | ≥ 3.22.0 (SDK ≥ 3.3.0) |
-| Dart | ≥ 3.3.0 |
-| Firebase Auth | ^5.3.1 |
-| Firestore | ^5.4.4 |
-| Firebase Storage | ^12.3.2 |
-| Provider | ^6.1.2 (state management) |
-| google_generative_ai | ^0.4.0 (Gemini API) |
-| fl_chart | ^0.71.0 (gráficos dashboard) |
-| shimmer | ^3.0.0 (skeleton loading) |
-| file_picker | ^8.1.2 (carga de PDFs) |
-| pdf | ^3.11.1 (generación de reportes) |
-| printing | ^5.13.1 (impresión de reportes) |
-| intl | ^0.20.2 (formateo de fechas) |
-| url_launcher | ^6.3.0 (apertura de enlaces) |
-| uuid | ^4.5.1 (generación de IDs) |
-| flutter_localizations | i18n (ES/EN) |
+### Framework y Lenguaje
+
+| Tecnología | Versión | Uso |
+|-------------|---------|-----|
+| Flutter SDK | ≥ 3.22.0 | Framework principal |
+| Dart | ≥ 3.3.0 | Lenguaje de programación |
+
+### Firebase Services
+
+| Paquete | Versión | Servicio |
+|---------|---------|----------|
+| `firebase_core` | ^3.6.0 | Inicialización de Firebase |
+| `firebase_auth` | ^5.3.1 | Autenticación de usuarios |
+| `cloud_firestore` | ^5.4.4 | Base de datos en tiempo real |
+| `firebase_storage` | ^12.3.2 | Almacenamiento de archivos PDF |
+
+### Paquetes de Terceros
+
+| Paquete | Versión | Uso |
+|---------|---------|-----|
+| `provider` | ^6.1.2 | Gestión de estado |
+| `google_generative_ai` | ^0.4.0 | Integración con Gemini 2.5 Flash |
+| `fl_chart` | ^0.71.0 | Gráficos interactivos |
+| `pdf` | ^3.11.1 | Generación de documentos PDF |
+| `printing` | ^5.13.1 | Vista e impresión de PDFs |
+| `shimmer` | ^3.0.0 | Efectos de carga |
+| `file_picker` | ^8.1.2 | Selección de archivos |
+| `intl` | ^0.20.2 | Formateo de fechas |
+| `uuid` | ^4.5.1 | Generación de identificadores únicos |
+| `url_launcher` | ^6.3.0 | Apertura de enlaces externos |
+
+### Plataformas Soportadas
+
+- ✅ **Web** (primaria)
+- Android, iOS, macOS, Windows, Linux (mediante Firebase Web config)
 
 ---
 
-## 📂 Arquitectura
+## 📁 Arquitectura del Proyecto
 
 ```
 lib/
-├── main.dart                         # Punto de entrada + MultiProvider
-├── firebase_options.dart             # Credenciales Firebase (flutterfire)
+├── main.dart                          # Punto de entrada y configuración de Firebase
+├── firebase_options.dart             # Opciones de Firebase por plataforma
 │
-├── models/
-│   ├── user_model.dart               # Modelo de usuario + roles
-│   ├── experience_model.dart         # Modelo de experiencia (tags, challenges, benefits)
-│   └── attachment_model.dart         # Modelo de archivo adjunto
+├── models/                            # Modelos de datos
+│   ├── user_model.dart               # Usuario
+│   ├── experience_model.dart        # Experiencia de blockchain
+│   └── attachment_model.dart         # Archivo adjunto PDF
 │
-├── services/
-│   ├── auth_service.dart             # Firebase Auth + traducción errores
-│   ├── firestore_service.dart        # CRUD + paginación + estadísticas
-│   ├── storage_service.dart          # Subida PDFs con progreso + validación
-│   └── ai_service.dart               # Gemini API: extracción JSON + Copilot RAG
+├── services/                          # Servicios de negocio
+│   ├── auth_service.dart             # Autenticación con Firebase Auth
+│   ├── firestore_service.dart        # Operaciones CRUD en Firestore
+│   ├── storage_service.dart          # Upload de PDFs a Firebase Storage
+│   └── ai_service.dart               # Integración con Google Gemini
 │
-├── providers/
-│   ├── auth_provider.dart            # Estado de auth + datos usuario
-│   ├── experience_provider.dart      # Filtros + paginación + CRUD + IA
-│   └── theme_provider.dart           # Toggle dark/light mode
+├── providers/                         # Proveedores de estado (Provider)
+│   ├── auth_provider.dart            # Estado de autenticación
+│   ├── experience_provider.dart     # Estado de experiencias, filtros, paginación, IA
+│   └── theme_provider.dart          # Estado del tema (claro/oscuro)
 │
-├── screens/
+├── screens/                           # Pantallas principales
 │   ├── auth/
-│   │   ├── login_screen.dart         # Login glassmorphism
-│   │   └── register_screen.dart      # Registro con validaciones
-│   ├── home_screen.dart              # Dashboard + TabBar (Experiencias + Estadísticas)
-│   ├── add_experience_screen.dart    # Formulario + IA Insights + carga archivos
-│   └── experience_detail_screen.dart # Vista completa + export PDF
+│   │   ├── login_screen.dart        # Inicio de sesión
+│   │   └── register_screen.dart     # Registro de usuarios
+│   ├── home_screen.dart             # Dashboard con tabs Experiencias/Estadísticas
+│   ├── add_experience_screen.dart   # Crear/Editar experiencias
+│   └── experience_detail_screen.dart # Vista detalle de experiencia
 │
-├── widgets/
-│   ├── auth_wrapper.dart             # StreamBuilder authStateChanges
-│   ├── experience_card.dart          # Card con hover + admin delete
-│   ├── stats_card.dart               # Métrica del dashboard
-│   ├── executive_summary_card.dart   # Resumen ejecutivo del dashboard
-│   ├── industry_bar_chart.dart       # Gráfico de barras por industria
-│   ├── experience_line_chart.dart    # Gráfico de línea de tendencia mensual
-│   ├── copilot_chat_drawer.dart      # Chat drawer con AI Copilot (RAG)
-│   ├── attachment_item.dart          # Item PDF compact/full
-│   ├── gradient_button.dart          # Botón azul→violeta
-│   ├── industry_badge.dart           # Pill con gradiente
-│   ├── search_filter_bar.dart        # Búsqueda + filtros
-│   ├── loading_shimmer.dart          # Skeleton idéntico a card
-│   ├── app_text_field.dart           # TextField del Design System
-│   ├── app_button.dart               # Botón del Design System
-│   └── empty_state.dart              # Estado vacío del Design System
+├── widgets/                           # Componentes reutilizables
+│   ├── auth_wrapper.dart            # Wrapper de autenticación con stream
+│   ├── experience_card.dart         # Card de experiencia con hover effects
+│   ├── stats_card.dart              # Métrica individual del dashboard
+│   ├── executive_summary_card.dart  # Resumen ejecutivo con estadísticas
+│   ├── industry_bar_chart.dart      # Gráfico de barras por industria
+│   ├── experience_line_chart.dart   # Gráfico de tendencia temporal
+│   ├── copilot_chat_drawer.dart     # Panel lateral del copilot IA
+│   ├── search_filter_bar.dart       # Barra de búsqueda y filtros
+│   ├── loading_shimmer.dart         # Skeleton loader
+│   ├── attachment_item.dart         # Representación de archivo adjunto
+│   ├── industry_badge.dart          # Badge con gradiente por industria
+│   ├── gradient_button.dart         # Botón con gradiente
+│   ├── app_text_field.dart          # Campo de texto estilizado
+│   ├── app_button.dart              # Botón base
+│   └── empty_state.dart             # Estado cuando no hay datos
 │
-├── utils/
-│   ├── pdf_generator.dart            # Reporte + detalle PDF
-│   └── validators.dart               # Validaciones de formularios
+├── utils/                             # Utilidades
+│   ├── pdf_generator.dart           # Generador de reportes PDF
+│   └── validators.dart              # Validadores de formularios
 │
-└── theme/
-    ├── app_theme.dart                # Tema claro + oscuro + primaryDark
-    ├── design_system.dart            # Spacing, Radius, Shadows
-    ├── app_colors.dart               # Paleta extendida (AppColors)
-    ├── app_typography.dart           # Escala tipográfica (AppTypography)
-    └── component_theme.dart          # Themes de componentes reutilizables
+└── theme/                             # Sistema de diseño
+    ├── app_colors.dart              # Paleta de colores completa
+    ├── app_typography.dart          # Estilos de tipografía
+    ├── design_system.dart           # Espaciado, radios, sombras
+    ├── component_theme.dart         # Temas de componentes Material
+    └── app_theme.dart               # Temas claro y oscuro
 ```
 
 ---
 
-## 🗄️ Modelo de Datos en Firestore
+## 🗄 Modelo de Datos
 
-### Colección `users/{uid}`
-| Campo       | Tipo      | Descripción                        |
-|-------------|-----------|-------------------------------------|
-| uid         | string    | ID del usuario (Firebase Auth)      |
-| name        | string    | Nombre completo                     |
-| company     | string    | Empresa u organización              |
-| email       | string    | Correo electrónico                  |
-| role        | string    | `admin` o `viewer`                  |
-| createdAt   | Timestamp | Fecha de registro                   |
+### Colección: `users/{uid}`
 
-### Colección `experiences/{id}`
-| Campo             | Tipo         | Descripción                        |
-|-------------------|--------------|-------------------------------------|
-| companyName       | string       | Nombre de la empresa                |
-| industry          | string       | Sector/Industria                    |
-| summary           | string       | Resumen (mín. 50 caracteres)        |
-| registrationDate  | Timestamp    | Fecha del registro                  |
-| createdBy         | string       | UID del autor                       |
-| createdByName     | string       | Nombre del autor                    |
-| createdByCompany  | string       | Empresa del autor                   |
-| tags              | array        | Etiquetas (extraídas por IA o manuales) |
-| keyChallenges     | array        | Retos clave identificados           |
-| keyBenefits       | array        | Beneficios o aprendizajes clave     |
-| attachments       | array        | Lista de AttachmentModel            |
-| createdAt         | Timestamp    | Timestamp de creación               |
+| Campo | Tipo | Descripción | Obligatorio |
+|-------|------|-------------|-------------|
+| `uid` | String | ID de Firebase Auth | ✅ |
+| `name` | String | Nombre completo del usuario | ✅ |
+| `company` | String | Nombre de la empresa | ✅ |
+| `email` | String | Correo electrónico | ✅ |
+| `createdAt` | Timestamp | Fecha de registro | ✅ |
 
-### Storage: `/attachments/{experienceId}/{fileName}`
+> **Nota:** El modelo `UserModel` no incluye campo `role`. El sistema de permisos se basa únicamente en la propiedad `createdBy` de las experiencias.
+
+### Colección: `experiences/{id}`
+
+| Campo | Tipo | Descripción | Obligatorio |
+|-------|------|-------------|-------------|
+| `id` | String | ID del documento (Firestore auto-generado) | ✅ |
+| `companyName` | String | Nombre de la empresa | ✅ |
+| `industry` | String | Sector industrial | ✅ |
+| `summary` | String | Resumen de la experiencia (mín. 50 caracteres) | ✅ |
+| `registrationDate` | Timestamp | Fecha de registro de la experiencia | ✅ |
+| `createdBy` | String | UID del usuario que creó la experiencia | ✅ |
+| `createdByName` | String | Nombre del creador | ✅ |
+| `createdByCompany` | String | Empresa del creador | ✅ |
+| `tags` | Array\<String\> | Etiquetas (generadas por IA o manuales) | No |
+| `keyChallenges` | Array\<String\> | Retos identificados | No |
+| `keyBenefits` | Array\<String\> | Beneficios y aprendizajes | No |
+| `attachments` | Array | Lista de archivos PDF adjuntos | No |
+| `link` | String | URL de referencia externa | No |
+| `createdAt` | Timestamp | Timestamp de creación en Firestore | ✅ |
+
+### Modelo: `AttachmentModel`
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `fileName` | String | Nombre original del archivo |
+| `fileUrl` | String | URL de descarga en Firebase Storage |
+| `fileSize` | int | Tamaño en bytes |
+| `uploadedAt` | DateTime | Fecha de subida |
+
+### Industrias Disponibles
+
+| Industria | Color del Badge |
+|-----------|-----------------|
+| Finanzas | Verde (#10B981) |
+| Logística | Azul (#3B82F6) |
+| Salud | Rojo (#EF4444) |
+| Retail | Amarillo (#F59E0B) |
+| Manufactura | Violeta (#8B5CF6) |
+| Gobierno | Índigo (#6366F1) |
+| Educación | Teal (#14B8A6) |
+| Otro | Gris (#6B7280) |
+
+### Storage: Firebase Storage
+
+```
+/attachments/{experienceId}/{fileName}
+```
+
+- Formato permitido: **únicamente PDF**
+- Tamaño máximo por archivo: **10 MB**
+- Múltiples archivos por experiencia: **soportado**
 
 ---
 
-## 👥 Roles de Usuario
+## 🔐 Sistema de Permisos y Roles
 
-| Acción                        | admin | viewer |
-|-------------------------------|:-----:|:------:|
-| Ver listado de experiencias   |  ✅   |  ✅    |
-| Crear experiencias            |  ✅   |  ✅    |
-| Adjuntar PDFs                 |  ✅   |  ✅    |
-| Exportar reportes PDF         |  ✅   |  ✅    |
-| **Eliminar experiencias**     |  ✅   |  ❌    |
+> **⚠️ Nota importante:** A diferencia de versiones anteriores, **esta aplicación NO utiliza roles de administrador/viewer**. El único sistema de permisos se basa en la propiedad `createdBy` de cada experiencia.
 
-> Para asignar rol `admin` a un usuario, modifica manualmente el campo `role` en Firestore Console → colección `users`.
+### Permisos por Experiencia
+
+| Acción | ¿Quién puede realizarla? |
+|--------|---------------------------|
+| **Leer** | Cualquier usuario autenticado |
+| **Crear** | Cualquier usuario autenticado |
+| **Editar** | **Solo el propietario** (`createdBy == uid`) |
+| **Eliminar** | **Solo el propietario** (`createdBy == uid`) |
+
+### Lógica implementada en `ExperienceCard`
+
+```dart
+final isOwner = widget.experience.createdBy == currentUid;
+```
+
+- Si `isOwner == true`: Se muestra el botón de eliminar
+- La edición se realiza desde `AddExperienceScreen` que recibe `experienceToEdit` opcional
+- Solo el owner puede passar el parámetro `experienceToEdit` con valor válido
+
+### Reglas de Firestore recomendadas
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Colección users: cada usuario solo puede leer/escribir su propio documento
+    match /users/{userId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+    
+    // Colección experiences: permisos basados en createdBy
+    match /experiences/{docId} {
+      allow read: if request.auth != null;
+      
+      allow create: if request.auth != null
+        && request.resource.data.createdBy == request.auth.uid;
+      
+      allow update: if request.auth != null
+        && resource.data.createdBy == request.auth.uid;
+      
+      allow delete: if request.auth != null
+        && resource.data.createdBy == request.auth.uid;
+    }
+  }
+}
+```
 
 ---
 
-## 📋 Requisitos Previos
+## ✅ Requisitos Previos
 
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) **≥ 3.22.0** con soporte Web
-- [Dart SDK](https://dart.dev/get-dart) **≥ 3.3.0**
-- [Node.js](https://nodejs.org/) ≥ 16 (para Firebase CLI)
-- [Firebase CLI](https://firebase.google.com/docs/cli): `npm install -g firebase-tools`
-- Google Chrome instalado
-- Cuenta Google con acceso a [Firebase Console](https://console.firebase.google.com)
-- Clave de API de [Google AI Studio](https://aistudio.google.com/apikey) (para funciones IA)
+### Software necesario
+
+1. **Flutter SDK** ≥ 3.22.0
+   ```bash
+   flutter --version
+   ```
+
+2. **Dart SDK** ≥ 3.3.0
+
+3. **Node.js** (opcional, para Firebase CLI)
+   ```bash
+   node --version
+   ```
+
+4. **Firebase CLI** (opcional, para despliegue)
+   ```bash
+   npm install -g firebase-tools
+   ```
+
+### Cuenta de Firebase
+
+1. Crear un proyecto en [Firebase Console](https://console.firebase.google.com/)
+2. Habilitar los servicios:
+   - **Authentication** → Email/Password
+   - **Firestore Database** → Crear en modo Producción o Test
+   - **Storage** → Crear bucket
+3. Registrar una app Web y obtener la configuración
+
+### Clave de API de Google Gemini (opcional para IA)
+
+1. Obtener API Key en [Google AI Studio](https://aistudio.google.com/apikey)
+2. La clave debe tener acceso al modelo `gemini-2.5-flash`
 
 ---
 
 ## 🔥 Configuración de Firebase
 
-### 1. Crear Proyecto
-```
-1. Ir a https://console.firebase.google.com
-2. "Agregar proyecto" → nombre (ej: blockchain-experiences)
-3. Habilitar/deshabilitar Google Analytics → Crear
-```
+### 1. Configuración del proyecto
 
-### 2. Habilitar Authentication
-```
-Firebase Console → Authentication → Comenzar
-→ Método de inicio de sesión → Correo/Contraseña → Habilitar → Guardar
-```
-
-### 3. Habilitar Firestore
-```
-Firebase Console → Firestore Database → Crear base de datos
-→ Modo de producción → Elige región → Listo
-```
-
-Pegar en **Reglas de Firestore**:
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
-    }
-    match /experiences/{docId} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null;
-      allow delete: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid))
-          .data.role == "admin";
-    }
-  }
-}
-```
-
-### 4. Habilitar Storage
-```
-Firebase Console → Storage → Comenzar → Modo de prueba → Crear
-```
-
-Pegar en **Reglas de Storage**:
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /attachments/{allPaths=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-### 5. Configurar FlutterFire CLI
 ```bash
-# Instalar FlutterFire CLI
+# Instalar FlutterFire CLI (si no está instalado)
 dart pub global activate flutterfire_cli
 
-# Ejecutar en la raíz del proyecto
+# Configurar Firebase para el proyecto
 flutterfire configure
 ```
-Seleccionar tu proyecto y la plataforma **Web**. Se generará `lib/firebase_options.dart` con tus credenciales.
+
+### 2. Habilitar servicios
+
+#### Authentication
+
+1. Ir a **Authentication** → **Sign-in method**
+2. Habilitar **Email/Password**
+
+#### Firestore Database
+
+1. Ir a **Firestore Database** → **Create database**
+2. Seleccionar ubicación (ej: us-central)
+3. Comenzar en **production** o **test mode**
+4. Aplicar las reglas de seguridad documentadas anteriormente
+
+#### Storage
+
+1. Ir a **Storage** → **Get started**
+2. Seleccionar ubicación
+3. Aplicar reglas para permitir uploads autenticados
+
+### 3. Variables de entorno
+
+Crear archivo `.env` en la raíz del proyecto:
+
+```env
+GEMINI_API_KEY=tu_api_key_de_gemini
+```
+
+O pasar como argumento al ejecutar:
+
+```bash
+flutter run --dart-define=GEMINI_API_KEY=tu_api_key
+```
+
+### 4. Configuración de índices compuestos (Firestore)
+
+La aplicación utiliza filtrado en el cliente para evitar errores de índices. Sin embargo, si deseas filtrar en el servidor, crea estos índices en Firestore:
+
+| Colección | Campos |
+|-----------|--------|
+| experiences | `industry` ASC, `createdAt` DESC |
+| experiences | `registrationDate` ASC, `createdAt` DESC |
 
 ---
 
-## 🚀 Instalación y Ejecución
+## 📦 Instalación y Ejecución
+
+### 1. Clonar el proyecto
 
 ```bash
-# 1. Clonar el repositorio
-git clone <repo-url>
+git clone <repository-url>
 cd blockchain_app
+```
 
-# 2. Instalar dependencias
+### 2. Instalar dependencias
+
+```bash
 flutter pub get
+```
 
-# 3. Configurar API key de Gemini (el código usa --dart-define)
-#    Ejecutar con la clave como dart-define:
-flutter run -d chrome --dart-define=GEMINI_API_KEY=tu_clave_aqui
-#    Para build de producción:
-flutter build web --dart-define=GEMINI_API_KEY=tu_clave_aqui
+### 3. Configurar Firebase
 
-# 4. Ejecutar en Chrome
+El archivo `lib/firebase_options.dart` ya está configurado con el proyecto `blockchain-app-95ee5`. Si usas tu propio proyecto:
+
+1. Ejecutar `flutterfire configure`
+2. Reemplazar el contenido de `lib/firebase_options.dart`
+3. Actualizar las reglas de Firestore
+
+### 4. Ejecutar la aplicación
+
+```bash
+# Modo desarrollo (web)
 flutter run -d chrome
 
-# 5. Compilar para producción
+# Con API key de Gemini
+flutter run -d chrome --dart-define=GEMINI_API_KEY=tu_api_key
+
+# Modo release
+flutter run -d chrome --release
+```
+
+### 5. Construir para producción
+
+```bash
+# Construir bundle web
 flutter build web
 
-# 6. Desplegar en Firebase Hosting
-firebase login
-firebase init hosting
-firebase deploy --only hosting
+# El output estará en build/web/
 ```
 
 ---
 
 ## 🤖 Integración de IA
 
-### AIService (`lib/services/ai_service.dart`)
+La aplicación utiliza **Google Gemini 2.5 Flash** para dos funcionalidades:
 
-Servicio unificado que usa **Google Gemini 2.5 Flash** con dos modos de operación:
+### 1. AI Insights (Extracción de Insights)
 
-1. **Extractor de Insights (JSON)** — analiza el resumen de una experiencia y devuelve tags, retos y beneficios en formato JSON estructurado. Se usa en el formulario de creación (`AddExperienceScreen`) para autocompletar estos campos.
+Cuando el usuario escribe un resumen de al menos 50 caracteres, puede presionar **"Analizar e Instalar Insights con IA"** para extraer:
 
-2. **Copilot Conversacional (RAG)** — al abrir el chat, se cargan todas las experiencias desde Firestore, se serializan a JSON y se inyectan como contexto en el `systemInstruction` del modelo. El asistente responde preguntas del usuario basándose exclusivamente en esos datos, sin inventar información.
+- **Tags/Etiquetas**: 2-4 etiquetas representativas
+- **Retos Clave**: 1-3 retos principales
+- **Beneficios/Lecciones**: 1-3 beneficios o aprendizajes
 
-### CopilotChatDrawer (`lib/widgets/copilot_chat_drawer.dart`)
+#### Prompt utilizado
 
-Drawer lateral accesible desde el FAB del dashboard. Ofrece:
-- Sugerencias de preguntas predefinidas
-- Historial de mensajes con burbujas de usuario y copilot
-- Indicador de "pensando" mientras la IA responde
-- Status con indicador verde/rojo de conectividad
-- Scroll automático al último mensaje
+```
+Analiza la siguiente lección aprendida sobre la implementación 
+de Blockchain en una empresa y extrae información clave en formato JSON.
 
-### AI Insights en formulario
+El JSON retornado debe cumplir estrictamente con esta estructura:
+{
+  "tags": ["Tag1", "Tag2", "Tag3"],
+  "challenges": ["Reto1", "Reto2", "Reto3"],
+  "benefits": ["Beneficio1", "Beneficio2", "Beneficio3"]
+}
+```
 
-Al escribir un resumen y presionar "Analizar e Instalar Insights con IA", el sistema envía el texto a Gemini y rellena automáticamente los campos de tags, retos y beneficios del formulario.
+### 2. AI Copilot (RAG Chatbot)
+
+El copilot conversacional permite hacer preguntas sobre las experiencias registradas usando **Retrieval Augmented Generation (RAG)**.
+
+#### Características
+
+- **Contexto inyectado**: Todas las experiencias se pasan como contexto JSON al system instruction
+- **Modelo dedicado**: `gemini-2.5-flash` con `systemInstruction` en el constructor
+- **Historial de conversación**: Mantiene contexto en la sesión
+- **Preguntas sugeridas**: 4 sugerencias predefinidas para iniciar
+
+#### Flujo de inicialización
+
+```dart
+// 1. Obtener experiencias en formato compacto (máx. 100)
+final experiences = await firestoreService.getAllExperiencesCompact(limit: 100);
+
+// 2. Crear sesión con system instruction
+final chatSession = aiService.startCopilotSession(experiences);
+
+// 3. Enviar mensajes usando sendMessage()
+final response = await chatSession.sendMessage(Content.text(message));
+```
+
+#### System Instruction
+
+```
+Eres el Copilot Experto de Blockchain en la Empresa. Eres un asistente 
+virtual diseñado para analizar lecciones aprendidas de implementaciones 
+de blockchain empresarial.
+
+Tu conocimiento fundamental para responder se basa ÚNICAMENTE en la 
+siguiente base de datos en formato JSON...
+
+Reglas críticas:
+1. Si el usuario pregunta sobre algo NO en el JSON, indícalo amablemente
+2. Responde con tono formal, profesional y analítico
+3. Usa Markdown en tus respuestas
+4. Relaciona y contrasta experiencias cuando sea útil
+```
+
+### 3. Deshabilitar IA
+
+Si no se proporciona `GEMINI_API_KEY` o está vacía:
+
+- El botón "Analizar con IA" no aparece
+- El Copilot muestra estado "Deshabilitado"
+- La aplicación funciona normalmente sin funciones de IA
 
 ---
 
 ## 🎨 Sistema de Diseño
 
-### DesignSystem (`lib/theme/design_system.dart`)
-Constantes centralizadas de espaciado, bordes redondeados y sombras:
-- **Spacing**: 4, 8, 12, 16, 20, 24, 32, 48, 64
-- **Radius**: xs (4), sm (8), md (12), lg (16), xl (24), pill (999)
-- **Shadows**: sm, md, lg con variantes dark/light
+### Paleta de Colores
 
-### AppColors (`lib/theme/app_colors.dart`)
-Paleta cromática extendida con:
-- surfaceDark, surfaceContainerDark, cardDark
-- primaryContainer, secondaryContainer
-- successGreen, warningAmber, errorRed, infoBlue
-- Gradientes predefinidos: primaryGradient, chartGradient, etc.
+#### Colores Primarios
 
-### AppTypography (`lib/theme/app_typography.dart`)
-Escala tipográfica con estilos predefinidos:
-- displayLarge, displayMedium, headlineLarge/Medium/Small
-- titleLarge/Medium/Small, bodyLarge/Medium/Small
-- labelLarge/Medium/Small
+| Nombre | Hex | Uso |
+|--------|-----|-----|
+| primaryBlue | `#2563EB` | Color principal |
+| primaryBlueLight | `#3B82F6` | Variante clara |
+| primaryBlueDark | `#1D4ED8` | Variante oscura |
+| primaryViolet | `#7C3AED` | Acento |
+| primaryVioletLight | `#8B5CF6` | Variante clara |
 
-### ComponentTheme (`lib/theme/component_theme.dart`)
-Temas reutilizables para componentes del ecosistema:
-- AppTextFieldTheme, AppButtonTheme, AppCardTheme, AppChipTheme
-- InputDecoration, ElevatedButton, OutlinedButton, Card, Chip
+#### Colores Semánticos
 
-### Widgets del Design System
-- `app_text_field.dart` — campos de texto con estilo unificado
-- `app_button.dart` — botones primarios, secundarios y outlined
-- `empty_state.dart` — estado vacío con icono y mensaje
+| Nombre | Hex | Uso |
+|--------|-----|-----|
+| success | `#10B981` | Éxito |
+| warning | `#F59E0B` | Advertencia |
+| error | `#EF4444` | Error |
+| info | `#06B6D4` | Información |
+
+#### Neutrales (Modo Claro)
+
+| Nombre | Hex |
+|--------|-----|
+| background | `#F9FAFB` |
+| surface | `#FFFFFF` |
+| textPrimary | `#111827` |
+| textSecondary | `#6B7280` |
+| border | `#E5E7EB` |
+
+#### Neutrales (Modo Oscuro)
+
+| Nombre | Hex |
+|--------|-----|
+| darkBg | `#0F172A` |
+| darkSurface | `#1E293B` |
+| darkTextPrimary | `#F9FAFB` |
+| darkTextSecondary | `#9CA3AF` |
+| darkBorder | `#374151` |
+
+### Tipografía
+
+Sistema basado en **Outfit** (Google Fonts):
+
+| Estilo | Tamaño | Peso | Uso |
+|--------|--------|------|-----|
+| headlineLarge | 32px | Bold | Títulos principales |
+| headlineMedium | 24px | Bold | Subtítulos |
+| headlineSmall | 20px | SemiBold | Encabezados |
+| titleLarge | 22px | SemiBold | Títulos de sección |
+| titleMedium | 16px | Medium | Títulos de cards |
+| bodyLarge | 16px | Regular | Cuerpo de texto |
+| bodyMedium | 14px | Regular | Texto secundario |
+| bodySmall | 12px | Regular | Metadatos |
+| captionLarge | 14px | Medium | Labels |
+
+### Espaciado (Sistema de 8px)
+
+| Nombre | Valor |
+|--------|-------|
+| xs | 4px |
+| sm | 8px |
+| md | 16px |
+| lg | 24px |
+| xl | 32px |
+| xxl | 48px |
+| xxxl | 64px |
+
+### Radios de Borde
+
+| Nombre | Valor |
+|--------|-------|
+| xs | 4px |
+| sm | 8px |
+| md | 12px |
+| lg | 16px |
+| xl | 24px |
+| xxl | 32px |
+
+### Sombras
+
+| Nivel | blurRadius | offset |
+|-------|------------|--------|
+| subtle | 8px | (0, 2) |
+| card | 16px | (0, 4) |
+| elevated | 24px | (0, 8) |
+| floating | 32px | (0, 12) |
+
+### Duraciones de Animación
+
+| Nombre | Duración |
+|--------|----------|
+| instant | 100ms |
+| fast | 200ms |
+| normal | 300ms |
+| slow | 500ms |
+| verySlow | 800ms |
 
 ---
 
-## 📊 Dashboard y Analytics
+## 📊 Dashboard y Analíticas
 
-El dashboard (`HomeScreen`) se organiza en dos tabs:
+### Pestaña "Estadísticas"
 
-### "Experiencias"
-- Grid responsivo de tarjetas con datos de cada experiencia
-- Barra de búsqueda con filtros por industria y rango de fechas
-- Filtro por tags
-- FABs para agregar experiencia y abrir el Copilot IA
+El dashboard presenta 4 métricas principales y 2 gráficos:
 
-### "Estadísticas"
-- **StatsCard** — 4 métricas (total experiencias, industrias, empresas, adjuntos)
-- **ExecutiveSummaryCard** — resumen ejecutivo con totales, top industria y rango de fechas
-- **IndustryBarChart** — gráfico de barras con distribución por industria
-- **ExperienceLineChart** — gráfico de línea con tendencia mensual de registros
-- Selector de rango de fechas para filtrar estadísticas
+#### Métricas
+
+1. **Total** — Cantidad total de experiencias registradas
+2. **Empresas** — Número de empresas únicas
+3. **Sector Líder** — Industria con más experiencias
+4. **PDFs** — Cantidad total de archivos adjuntos
+
+#### Gráficos
+
+1. **IndustryBarChart** — Distribución de experiencias por industria
+   - Gráfico de barras horizontales
+   - Colores según la paleta de industrias
+   - Ordenado por cantidad descendente
+
+2. **ExperienceLineChart** — Tendencia temporal de registros
+   - Gráfico de líneas
+   - Eje X: Mes-Año (ej: "2024-03")
+   - Eje Y: Cantidad de registros
+   - Ordenado cronológicamente
+
+#### Resumen Ejecutivo
+
+Tarjeta que muestra:
+- Total de experiencias
+- Total de empresas únicas
+- Industria más popular
+- Empresas que más han registrado
+- Promedio de experiencias por empresa
+
+### Pestaña "Experiencias"
+
+- Lista de todas las experiencias filtrables
+- Búsqueda por texto en: empresa, industria, tags, resumen, retos, beneficios
+- Filtro por industria (dropdown)
+- Filtro por rango de fechas (DateRangePicker)
+- Botón para limpiar filtros
+- Paginación infinita con scroll
+
+---
+
+## 📄 Exportación de Reportes
+
+### PDF de Reporte Coleivo
+
+Genera un documento landscape con tabla de todas las experiencias:
+
+- **Formato**: A4 Landscape
+- **Tabla columnas**: Empresa, Industria, Fecha, Registrado por, Resumen (truncado a 120 chars), Adjuntos
+- **Paginación**: 15 filas por página
+- **Encabezado**: Gradiente azul-violeta con logo y fecha de generación
+- **Pie de página**: "Blockchain en la Empresa — Confidencial" + número de página
+
+### PDF de Detalle Individual
+
+Genera un documento portrait con información completa de una experiencia:
+
+- **Formato**: A4 Portrait
+- **Margen**: 32px
+- **Campos**: Empresa, Industria, Fecha, Registrado por, Link de Referencia (si existe)
+- **Resumen**: Texto completo en contenedor con fondo
+- **Archivos Adjuntos**: Lista de archivos con viñetas
 
 ---
 
 ## 🔒 Seguridad en Producción
 
-1. Actualizar reglas Firestore para validar datos en escritura
-2. Configurar CORS en Firebase Storage
-3. Añadir dominio personalizado en Firebase Hosting
-4. Revisar reglas de Storage para restringir por tipo de archivo
-5. Monitorear uso con Firebase Performance y Crashlytics
-6. No exponer la API key de Gemini en el frontend (usar Cloud Function como proxy)
+### Recomendaciones
+
+1. **Configurar reglas de Firestore** según el modelo documentado
+2. **Habilitar App Check** para proteger against abuse
+3. **Configurar CORS** en Firebase Storage si es necesario
+4. **Usar HTTPS** obligatoriamente
+5. **No exponer API keys** en código cliente:
+   - Usar Firebase Security Rules
+   - Considerar Cloud Functions para operaciones sensibles
+6. **Validar archivos PDF** en servidor ( Cloud Functions) si es necesario
+7. **Limitar tamaño de uploads** a 10MB por archivo
+
+### Límites de la aplicación
+
+- Máximo 10 MB por archivo PDF
+- Solo extensión `.pdf` permitida
+- Máximo 100 experiencias para contexto RAG del copilot
+- Timeout de 60 segundos para llamadas a Gemini
 
 ---
 
-## ❓ Solución de Problemas
+## 🔧 Solución de Problemas
 
-### La IA no responde / "API key not set"
+### Error: `cloud_firestore/failed-precondition`
+
+**Causa**: Intentar hacer `where()` + `orderBy()` en campos diferentes sin índice compuesto.
+
+**Solución**: La aplicación filtra en el cliente sobre el stream de Firestore. Si deseas filtrar en servidor, crea los índices compuestos necesarios en Firestore Console.
+
+### Error: "AI features will be disabled"
+
+**Causa**: `GEMINI_API_KEY` no está definida o está vacía.
+
+**Solución**: Obtener API key de Google AI Studio y pasar como `--dart-define=GEMINI_API_KEY=tu_key`.
+
+### Error: `INVALID_LOGIN_CREDENTIALS`
+
+**Causa**: Credenciales de Firebase Auth inválidas.
+
+**Solución**: Verificar que el email/password sea correcto y que Email/Password esté habilitado en Firebase Console.
+
+### Error: `permission_denied` en Storage
+
+**Causa**: Reglas de Storage no permiten escritura.
+
+**Solución**: Aplicar las reglas documentadas o permitir autenticados:
+
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /attachments/{experienceId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+    }
+  }
+}
 ```
-Asegúrate de ejecutar con --dart-define:
-flutter run -d chrome --dart-define=GEMINI_API_KEY=tu_clave
-```
-Si usas `flutter build web`, incluye el mismo flag en el build.
 
-### Error `cloud_firestore/failed-precondition`
-Ocurre cuando se usan filtros combinados (industria + fecha) sin índices compuestos. La app aplica filtros del lado del cliente, pero si agregas consultas nuevas, crea los índices desde el enlace de error en la consola de Firebase.
+### Shimmer no coincide con la card real
 
-### Error de CORS en Storage
-Si los PDFs no se cargan, configura CORS en Firebase Storage:
-```bash
-gsutil cors set cors.json gs://tu-bucket.appspot.com
-```
+**Causa**: El skeleton loader intenta replicar la estructura de `ExperienceCard` con sus animaciones.
 
-### Error `setState() called during build`
-Es un warning controlado por `AuthProvider._safeNotify()`. No afecta la funcionalidad.
+**Solución**: El shimmer en `LoadingShimmer` incluye los mismos elementos: avatar placeholder, líneas de texto, badge de industria.
+
+### Copilot no responde
+
+**Causa**: La sesión RAG no se inicializó o `isAiEnabled` es `false`.
+
+**Solución**: Verificar que `GEMINI_API_KEY` esté configurada y que `initCopilotSession()` se llamó.
 
 ---
 
-## 🤔 Decisiones Técnicas
+## 📐 Decisiones Técnicas
 
-**¿Por qué Flutter Web?**
-- Un solo codebase para Web/iOS/Android
-- Rendimiento cercano a nativo con Skia/CanvasKit
-- Hot reload para desarrollo ágil
-- Ecosistema maduro de paquetes Firebase
+### 1. Filtrado en Cliente vs Servidor
 
-**¿Por qué Firebase?**
-- Firestore: base de datos NoSQL en tiempo real, perfecta para StreamBuilder
-- Authentication: OAuth, email/password, social login sin backend propio
-- Storage: CDN global para archivos, URLs de descarga seguras
-- Escalabilidad automática, sin servidores que mantener
+**Decisión**: Aplicar filtros en el cliente (`ExperienceProvider.filteredExperiences()`).
 
-**¿Por qué Provider?**
-- Solución oficial de Google, simple y sin boilerplate
-- Perfecto para apps de mediano tamaño
-- Integración nativa con Flutter DevTools
+**Razón**: Evita el error `cloud_firestore/failed-precondition` causado por combinaciones de `where()` + `orderBy()` que requieren índices compuestos. La pérdida de rendimiento es aceptable dado el límite de documentos (10 por página).
 
-**¿Por qué Gemini para IA?**
-- Modelo gratuito con cuota generosa (Gemini 2.5 Flash)
-- Soporte nativo para JSON structured output
-- API sencilla con el paquete `google_generative_ai`
-- Sin necesidad de servidor propio para el RAG conversacional
+### 2. Sin Sistema de Roles
+
+**Decisión**: No implementar roles admin/viewer.
+
+**Razón**: Simplifica el modelo de datos. La propiedad `createdBy` es suficiente para determinar permisos de edición/eliminación. Todos los usuarios autenticados pueden leer todas las experiencias.
+
+### 3. Provider para State Management
+
+**Decisión**: Usar Provider en lugar de Riverpod, Bloc o GetX.
+
+**Razón**: Provider es el paquete recomendado por Flutter team para state management, con API simple y suficiente para las necesidades de la app.
+
+### 4. System Instruction en Constructor de GenerativeModel
+
+**Decisión**: Crear un `GenerativeModel` nuevo con `systemInstruction` por cada sesión de chat.
+
+**Razón**: Pasar `systemInstruction` dentro de `startChat(history:)` causaba `AssertionError` en `_aggregate`. La solución es instanciar el modelo con el system instruction y usar `startChat(history: [])`.
+
+### 5. Shimmer con Estructura Idéntica
+
+**Decisión**: Implementar `LoadingShimmer` que replica exactamente la estructura de `ExperienceCard`.
+
+**Razón**: Evita el "layout shift" cuando las cards reales cargan. El skeleton incluye avatar, gradiente decorativo, líneas de texto, badge de industria y botón.
+
+### 6. Responsive: 4 Columnas en Desktop
+
+**Decisión**: Grid de 4 columnas en desktop (≥1100px).
+
+**Razón**: El espacio horizontal disponible en desktop permite mostrar más contenido sin hacinamiento. El `childAspectRatio: 0.75` mantiene tarjetas de altura consistente.
+
+### 7. Paginación con Scroll Infinito
+
+**Decisión**: Usar `ScrollController` con侦听 y `startAfterDocument`.
+
+**Razón**: Más natural que botones "Cargar más". El threshold de 300px antes del final anticipa la necesidad de cargar más documentos.
+
+### 8. Link Opcional en Modelo
+
+**Decisión**: Campo `link` de tipo `String?` con validación de URL.
+
+**Razón**: Permite referencing artículos o recursos externos relevantes sin obligatoriedad. Validado con regex que acepta http/https.
+
+---
+
+## 📄 Licencia
+
+MIT License — Ver archivo `LICENSE` para más detalles.
+
+
+**Versión:** 2.0.0+1  
+**Última actualización:** Mayo 2026
